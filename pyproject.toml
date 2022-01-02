@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "pod"
+version = "0.1.0"
+description = ""
+authors = ["Nima Hamidi <hamidi@alumni.stanford.edu>"]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+
+[tool.poetry.dev-dependencies]
+black = "^21.12b0"
+pytest = "^6.2.5"
+mypy = "^0.930"
+pylint = "^2.12.2"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
