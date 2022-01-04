@@ -1,6 +1,6 @@
 import enum
 
-from typing import Union, List, Iterable, Container, Callable, Dict
+from typing import Union, Iterable, Container, Callable, Dict
 from dataclasses import dataclass
 
 from pod import get_catalog
@@ -30,15 +30,15 @@ def _process_class(
         print(get_catalog(converter))
         return get_catalog(converter).unpack(cls, raw, **kwargs)
 
-    helpers: Dict[str, Callable] = {
+    methods: Dict[str, Callable] = {
         "pack": pack,
         "unpack": unpack,
     }
 
-    for c in converters:
-        helpers.update(get_catalog(c).generate_helpers(type_))
+    for catalog in map(get_catalog, converters):
+        methods.update(catalog.generate_helpers(type_))
 
-    for name, method in helpers.items():
+    for name, method in methods.items():
         should_bind = True
         if hasattr(type_, name):
             if not override:
@@ -57,7 +57,7 @@ def pod(
     cls=None,
     /,
     converters=("bytes",),
-    override: Union[bool, List[str]] = False,
+    override: Union[bool, Container[str]] = False,
     dataclass_fn="auto",
 ):
     def wrap(cls_):

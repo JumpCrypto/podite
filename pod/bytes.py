@@ -1,3 +1,4 @@
+from dataclasses import is_dataclass, fields
 from io import BytesIO
 from abc import ABC, abstractmethod
 from typing import Tuple, Dict, Callable
@@ -61,17 +62,14 @@ class CustomBytesPodConverter(BytesPodConverter):
         return self._call_by_name(type_, CALC_MAX_SIZE, (), {}, 0)
 
     def pack_partial(self, type_, buffer, obj, **kwargs) -> bool:
-        args = (type_, buffer, obj)
-        return self._call_by_name(type_, TO_BYTES_PARTIAL, args, kwargs, None)[0]
+        args = (buffer, obj)
+        return self._call_by_name(type_, TO_BYTES_PARTIAL, args, kwargs, None)
 
     def unpack_partial(self, type_, buffer, **kwargs) -> Tuple[bool, object]:
         return self._call_by_name(
             type_,
             FROM_BYTES_PARTIAL,
-            (
-                type_,
-                buffer,
-            ),
+            (buffer,),
             kwargs,
             None,
         )
@@ -83,14 +81,39 @@ class BytesPodConverterCatalog(PodConverterCatalog):
         Unpacks obj according to given type_ by trying all registered converters.
         """
         error_msg = "No converter was able to answer if this obj is static"
-        return self._call_until_success("is_static", (type_,), dict(), error_msg)
+        return self._call_until_success("is_static", (type_,), {}, error_msg)
 
     def calc_max_size(self, type_):
         """
         Unpacks obj according to given type_ by trying all registered converters.
         """
         error_msg = "No converter was able to calculate maximum size of obj"
-        return self._call_until_success("calc_max_size", (type_,), dict(), error_msg)
+        return self._call_until_success("calc_max_size", (type_,), {}, error_msg)
+
+    def pack(self, type_, obj, **kwargs):
+        buffer = BytesIO()
+        self.pack_partial(type_, buffer, obj, **kwargs)
+
+        return buffer.getvalue()
+
+    def pack_partial(self, type_, buffer, obj, **kwargs):
+        args = type_, buffer, obj
+        error_msg = "No converter was able to unpack raw data"
+        self._call_until_success("pack_partial", args, kwargs, error_msg)
+
+    def unpack(self, type_, raw, checked=False, **kwargs) -> object:
+        buffer = BytesIO(raw)
+        obj = self.unpack_partial(type_, buffer, **kwargs)
+
+        if checked and buffer.tell() < len(buffer.getvalue()):
+            raise RuntimeError("Unused bytes in provided raw data")
+
+        return obj
+
+    def unpack_partial(self, type_, buffer, **kwargs) -> Tuple[bool, object]:
+        args = type_, buffer
+        error_msg = "No converter was able to pack object"
+        return self._call_until_success("unpack_partial", args, kwargs, error_msg)
 
     def generate_helpers(self, type_) -> Dict[str, Callable]:
         helpers = super().generate_helpers(type_)
@@ -123,6 +146,47 @@ class BytesPodConverterCatalog(PodConverterCatalog):
         helpers["calc_size"] = calc_size
         helpers["to_bytes"] = to_bytes
         helpers["from_bytes"] = from_bytes
+
+        if is_dataclass(type_):
+            helpers.update(self._generate_packers())
+
+        return helpers
+
+    def _generate_packers(self) -> Dict[str, Callable]:
+        helpers: Dict[str, Callable] = {}
+
+        @classmethod  # type: ignore[misc]
+        def _is_static(cls) -> bool:
+            for field in fields(cls):
+                if not self.is_static(field.type):
+                    return False
+            return True
+
+        @classmethod  # type: ignore[misc]
+        def _calc_max_size(cls):
+            total = 0
+            for field in fields(cls):
+                total += self.calc_max_size(field.type)
+
+            return total
+
+        @classmethod  # type: ignore[misc]
+        def _to_bytes_partial(cls, buffer, obj):
+            for field in fields(cls):
+                value = getattr(obj, field.name)
+                self.pack_partial(field.type, buffer, value)
+
+        @classmethod  # type: ignore[misc]
+        def _from_bytes_partial(cls, buffer, **kwargs):
+            values = {}
+            for field in fields(cls):
+                values[field.name] = self.unpack_partial(field.type, buffer)
+            return cls(**values)
+
+        helpers[IS_STATIC] = _is_static
+        helpers[CALC_MAX_SIZE] = _calc_max_size
+        helpers[TO_BYTES_PARTIAL] = _to_bytes_partial
+        helpers[FROM_BYTES_PARTIAL] = _from_bytes_partial
 
         return helpers
 

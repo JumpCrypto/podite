@@ -9,7 +9,7 @@ _BYTEORDER: Literal["little", "big"] = "little"
 
 
 def new_atomic_type(name: str, base: type, code: str, unpacker, packer=lambda x: x):
-    @pod(override=True, dataclass_fn=None)
+    @pod(override=("from_bytes", "to_bytes"), dataclass_fn=None)
     class Atom(base):  # type: ignore
         @classmethod
         def _get_code(cls):
@@ -25,12 +25,12 @@ def new_atomic_type(name: str, base: type, code: str, unpacker, packer=lambda x:
             return struct.calcsize(cls._get_code())
 
         @classmethod
-        def _to_bytes_partial(cls, _type, buffer, obj):
+        def _to_bytes_partial(cls, buffer, obj):
             obj = packer(obj)
             buffer.write(struct.pack(cls._get_code(), obj))
 
         @classmethod
-        def _from_bytes_partial(cls, _type, buffer: BytesIO):
+        def _from_bytes_partial(cls, buffer: BytesIO):
             size = cls._calc_max_size()
             encoded = buffer.read(size)
             decoded, *_ = struct.unpack(cls._get_code(), encoded)
