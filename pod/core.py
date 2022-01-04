@@ -3,8 +3,7 @@
 Core functionality and base classes of pod packing/unpacking are implemented here.
 """
 from abc import abstractmethod, ABC
-from typing import Dict, List, Tuple
-from collections import defaultdict
+from typing import List, Tuple, Union, Dict, Callable
 
 
 class PodConverter(ABC):
@@ -56,34 +55,29 @@ class PodConverterCatalog:
         assert isinstance(converter, PodConverter)
         self.converters.append(converter)
 
+    def _call_until_success(self, name, args, kwargs, error_msg):
+        for converter in self.converters:
+            method = getattr(converter, name)
+            success, result = method(*args, **kwargs)
+            if success:
+                return result
+        raise ValueError(error_msg)
+
     def pack(self, type_, obj, **kwargs):
         """
         Packs obj according to given type_ by trying all registered converters.
         """
-        for converter in self.converters:
-            success, result = converter.pack(type_, obj, **kwargs)
-            if success:
-                return result
+        args = type_, obj
+        error_msg = "No converter was able to pack object"
+        return self._call_until_success("pack", args, kwargs, error_msg)
 
-        raise ValueError("No converter was able to pack object")
-
-    def unpack(self, type_, raw, checked=False, **kwargs):
+    def unpack(self, type_, raw, **kwargs):
         """
         Unpacks obj according to given type_ by trying all registered converters.
         """
-        for converter in self.converters:
-            success, result = converter.unpack(type_, raw, checked=checked, **kwargs)
-            if success:
-                return result
+        args = type_, raw
+        error_msg = "No converter was able to unpack raw data"
+        return self._call_until_success("unpack", args, kwargs, error_msg)
 
-        raise ValueError("No converter was able to unpack raw data")
-
-
-_CATALOGS: Dict[str, PodConverterCatalog] = defaultdict(PodConverterCatalog)
-
-
-def get_catalog(name):
-    """
-    Returns a converter catalog corresponding to name (e.g., for name="bytes" or name="json").
-    """
-    return _CATALOGS[name]
+    def generate_helpers(self, type_) -> Dict[str, Callable]:
+        return dict()
