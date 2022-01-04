@@ -2,42 +2,12 @@
 """
 Core functionality and base classes of pod packing/unpacking are implemented here.
 """
-from abc import abstractmethod, ABC
-from typing import List, Tuple, Union, Dict, Callable
+from typing import List, Dict, Callable, TypeVar, Generic
+
+PodConverter = TypeVar("PodConverter")
 
 
-class PodConverter(ABC):
-    """
-    The base class for all POD converters.
-    """
-
-    @abstractmethod
-    def pack(self, type_, obj, **kwargs) -> Tuple[bool, object]:
-        """
-        Packs obj according to given type_.
-
-        :param type_: the *template* type used for packing
-        :param obj: the actual object to be packed
-        :param kwargs: keyword arguments to be passed to converters
-        :return: A bool indicating success and the packed object (None if unsuccessful)
-        """
-        raise NotImplementedError
-
-    @abstractmethod
-    def unpack(self, type_, raw, checked=False, **kwargs):
-        """
-        Unpacks raw according to given type_.
-
-        :param type_: the *template* type used for packing
-        :param raw: the actual object to be packed
-        :param checked: if true, an exception will be raised if raw is not fully consumed
-        :param kwargs: keyword arguments to be passed to converters
-        :return: A bool indicating success and the unpacked object (None if unsuccessful)
-        """
-        raise NotImplementedError
-
-
-class PodConverterCatalog:
+class PodConverterCatalog(Generic[PodConverter]):
     """
     The class to hold a list of possible converters to apply when packing/unpacking until a
     success happens.
@@ -52,7 +22,6 @@ class PodConverterCatalog:
         """
         Registers a new converter to be used if previous converters fail to pack/unpack.
         """
-        assert isinstance(converter, PodConverter)
         self.converters.append(converter)
 
     def _call_until_success(self, name, args, kwargs, error_msg):
@@ -65,7 +34,12 @@ class PodConverterCatalog:
 
     def pack(self, type_, obj, **kwargs):
         """
-        Packs obj according to given type_ by trying all registered converters.
+        Packs obj according to given type_.
+
+        :param type_: the *template* type used for packing
+        :param obj: the actual object to be packed
+        :param kwargs: keyword arguments to be passed to converters
+        :return: A bool indicating success and the packed object (None if unsuccessful)
         """
         args = type_, obj
         error_msg = "No converter was able to pack object"
@@ -73,7 +47,13 @@ class PodConverterCatalog:
 
     def unpack(self, type_, raw, **kwargs):
         """
-        Unpacks obj according to given type_ by trying all registered converters.
+        Unpacks raw according to given type_.
+
+        :param type_: the *template* type used for packing
+        :param raw: the actual object to be packed
+        :param checked: if true, an exception will be raised if raw is not fully consumed
+        :param kwargs: keyword arguments to be passed to converters
+        :return: A bool indicating success and the unpacked object (None if unsuccessful)
         """
         args = type_, raw
         error_msg = "No converter was able to unpack raw data"

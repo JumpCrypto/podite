@@ -1,12 +1,12 @@
 from dataclasses import is_dataclass, fields
 from io import BytesIO
 from abc import ABC, abstractmethod
-from typing import Tuple, Dict, Callable
+from typing import Tuple, Dict, Callable, Any
 
-from .core import PodConverter, PodConverterCatalog
+from .core import PodConverterCatalog
 
 
-class BytesPodConverter(PodConverter, ABC):
+class BytesPodConverter(ABC):
     @abstractmethod
     def is_static(self, type_) -> Tuple[bool, bool]:
         raise NotImplementedError
@@ -15,25 +15,9 @@ class BytesPodConverter(PodConverter, ABC):
     def calc_max_size(self, type_) -> Tuple[bool, int]:
         raise NotImplementedError
 
-    def pack(self, type_, obj, **kwargs) -> Tuple[bool, bytes]:
-        buffer = BytesIO()
-        success = self.pack_partial(type_, buffer, obj, **kwargs)
-
-        return success, buffer.getvalue()
-
     @abstractmethod
-    def pack_partial(self, type_, buffer, obj, **kwargs) -> bool:
+    def pack_partial(self, type_, buffer, obj, **kwargs) -> Tuple[bool, Any]:
         raise NotImplementedError
-
-    def unpack(self, type_, raw, checked=False, **kwargs) -> Tuple[bool, object]:
-        buffer = BytesIO(raw)
-        success, obj = self.unpack_partial(type_, buffer, **kwargs)
-
-        if success and checked:
-            if buffer.tell() < len(buffer.getvalue()):
-                raise RuntimeError("Unused bytes in provided raw data")
-
-        return success, obj
 
     @abstractmethod
     def unpack_partial(self, type_, buffer, **kwargs) -> Tuple[bool, object]:
@@ -61,7 +45,7 @@ class CustomBytesPodConverter(BytesPodConverter):
     def calc_max_size(self, type_) -> Tuple[bool, int]:
         return self._call_by_name(type_, CALC_MAX_SIZE, (), {}, 0)
 
-    def pack_partial(self, type_, buffer, obj, **kwargs) -> bool:
+    def pack_partial(self, type_, buffer, obj, **kwargs) -> Tuple[bool, Any]:
         args = (buffer, obj)
         return self._call_by_name(type_, TO_BYTES_PARTIAL, args, kwargs, None)
 
@@ -75,7 +59,7 @@ class CustomBytesPodConverter(BytesPodConverter):
         )
 
 
-class BytesPodConverterCatalog(PodConverterCatalog):
+class BytesPodConverterCatalog(PodConverterCatalog[BytesPodConverter]):
     def is_static(self, type_):
         """
         Unpacks obj according to given type_ by trying all registered converters.
