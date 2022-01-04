@@ -76,3 +76,56 @@ class CustomBytesPodConverter(BytesPodConverter):
             None,
         )
 
+
+class BytesPodConverterCatalog(PodConverterCatalog):
+    def is_static(self, type_):
+        """
+        Unpacks obj according to given type_ by trying all registered converters.
+        """
+        error_msg = "No converter was able to answer if this obj is static"
+        return self._call_until_success("is_static", (type_,), dict(), error_msg)
+
+    def calc_max_size(self, type_):
+        """
+        Unpacks obj according to given type_ by trying all registered converters.
+        """
+        error_msg = "No converter was able to calculate maximum size of obj"
+        return self._call_until_success("calc_max_size", (type_,), dict(), error_msg)
+
+    def generate_helpers(self, type_) -> Dict[str, Callable]:
+        helpers = super().generate_helpers(type_)
+
+        @classmethod  # type: ignore[misc]
+        def is_static(cls):
+            return _BYTES_CATALOG.is_static(cls)
+
+        @classmethod  # type: ignore[misc]
+        def calc_max_size(cls):
+            return _BYTES_CATALOG.calc_max_size(cls)
+
+        @classmethod  # type: ignore[misc]
+        def calc_size(cls):
+            if not cls.is_static():
+                raise RuntimeError("calc_size can only be called for static classes")
+
+            return cls.calc_max_size()
+
+        @classmethod  # type: ignore[misc]
+        def to_bytes(cls, obj, **kwargs):
+            return cls.pack(obj, converter="bytes", **kwargs)
+
+        @classmethod  # type: ignore[misc]
+        def from_bytes(cls, raw, **kwargs):
+            return cls.unpack(raw, converter="bytes", **kwargs)
+
+        helpers["is_static"] = is_static
+        helpers["calc_max_size"] = calc_max_size
+        helpers["calc_size"] = calc_size
+        helpers["to_bytes"] = to_bytes
+        helpers["from_bytes"] = from_bytes
+
+        return helpers
+
+
+_BYTES_CATALOG = BytesPodConverterCatalog()
+_BYTES_CATALOG.register(CustomBytesPodConverter())
