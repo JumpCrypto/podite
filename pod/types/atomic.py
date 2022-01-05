@@ -51,6 +51,10 @@ def get_default_repr():
     return _BYTEORDER
 
 
+# bool
+Bool = new_atomic_type("Bool", object, "{}b", bool)
+
+
 # 1-byte integers
 I8l = new_atomic_type("I8l", int, "<b", int)
 I8b = new_atomic_type("I8b", int, ">b", int)

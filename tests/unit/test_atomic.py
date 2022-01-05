@@ -1,4 +1,12 @@
-from pod.types.atomic import I8, U8, I32l, I32b, U32b, I128l, I128b, U128l, U128b
+from pod.types.atomic import Bool, I8, U8, I32l, I32b, U32b, I128l, I128b, U128l, U128b
+
+
+def test_bool():
+    assert Bool.is_static()
+    assert Bool.calc_size() == 1
+
+    assert Bool.from_bytes(b"\x01")
+    assert not Bool.from_bytes(b"\x00")
 
 
 def test_i8():
