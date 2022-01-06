@@ -1,5 +1,4 @@
-from pod.types.atomic import U32
-from pod.types.rust import Option
+from pod import U32, Option
 
 
 def test_option_packed():

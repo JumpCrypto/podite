@@ -49,3 +49,7 @@ from .array import (
 from .enum import Enum
 
 from .rust import Option
+
+from .builtin import register_builtins
+
+register_builtins()
