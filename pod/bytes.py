@@ -3,24 +3,24 @@ from io import BytesIO
 from abc import ABC, abstractmethod
 from typing import Tuple, Dict, Callable, Any
 
-from .core import PodConverterCatalog
+from .core import PodConverterCatalog, POD_SELF_CONVERTER
 
 
 class BytesPodConverter(ABC):
     @abstractmethod
-    def is_static(self, type_) -> Tuple[bool, bool]:
+    def is_static(self, type_) -> bool:
         raise NotImplementedError
 
     @abstractmethod
-    def calc_max_size(self, type_) -> Tuple[bool, int]:
+    def calc_max_size(self, type_) -> int:
         raise NotImplementedError
 
     @abstractmethod
-    def pack_partial(self, type_, buffer, obj, **kwargs) -> Tuple[bool, Any]:
+    def pack_partial(self, type_, buffer, obj, **kwargs) -> Any:
         raise NotImplementedError
 
     @abstractmethod
-    def unpack_partial(self, type_, buffer, **kwargs) -> Tuple[bool, object]:
+    def unpack_partial(self, type_, buffer, **kwargs) -> Any:
         raise NotImplementedError
 
 
@@ -30,33 +30,24 @@ TO_BYTES_PARTIAL = "_to_bytes_partial"
 FROM_BYTES_PARTIAL = "_from_bytes_partial"
 
 
-class CustomBytesPodConverter(BytesPodConverter):
-    @staticmethod
-    def _call_by_name(type_, name, args, kwargs, default_value):
-        if not hasattr(type_, name):
-            return False, default_value
+class SelfBytesPodConverter(BytesPodConverter):
+    def get_mapping(self, type_):
+        converters = getattr(type_, POD_SELF_CONVERTER, ())
+        if "bytes" in converters:
+            return self
+        return None
 
-        method = getattr(type_, name)
-        return True, method(*args, **kwargs)
+    def is_static(self, type_) -> bool:
+        return getattr(type_, IS_STATIC)()
 
-    def is_static(self, type_) -> Tuple[bool, bool]:
-        return self._call_by_name(type_, IS_STATIC, (), {}, False)
+    def calc_max_size(self, type_) -> int:
+        return getattr(type_, CALC_MAX_SIZE)()
 
-    def calc_max_size(self, type_) -> Tuple[bool, int]:
-        return self._call_by_name(type_, CALC_MAX_SIZE, (), {}, 0)
+    def pack_partial(self, type_, buffer, obj, **kwargs) -> Any:
+        return getattr(type_, TO_BYTES_PARTIAL)(buffer, obj, **kwargs)
 
-    def pack_partial(self, type_, buffer, obj, **kwargs) -> Tuple[bool, Any]:
-        args = (buffer, obj)
-        return self._call_by_name(type_, TO_BYTES_PARTIAL, args, kwargs, None)
-
-    def unpack_partial(self, type_, buffer, **kwargs) -> Tuple[bool, object]:
-        return self._call_by_name(
-            type_,
-            FROM_BYTES_PARTIAL,
-            (buffer,),
-            kwargs,
-            None,
-        )
+    def unpack_partial(self, type_, buffer, **kwargs) -> Any:
+        return getattr(type_, FROM_BYTES_PARTIAL)(buffer, **kwargs)
 
 
 class BytesPodConverterCatalog(PodConverterCatalog[BytesPodConverter]):
@@ -65,14 +56,16 @@ class BytesPodConverterCatalog(PodConverterCatalog[BytesPodConverter]):
         Unpacks obj according to given type_ by trying all registered converters.
         """
         error_msg = "No converter was able to answer if this obj is static"
-        return self._call_until_success("is_static", (type_,), {}, error_msg)
+        converter = self._get_converter_or_raise(type_, error_msg)
+        return converter.is_static(type_)
 
     def calc_max_size(self, type_):
         """
         Unpacks obj according to given type_ by trying all registered converters.
         """
         error_msg = f"No converter was able to calculate maximum size of type {type_}"
-        return self._call_until_success("calc_max_size", (type_,), {}, error_msg)
+        converter = self._get_converter_or_raise(type_, error_msg)
+        return converter.calc_max_size(type_)
 
     def pack(self, type_, obj, **kwargs):
         buffer = BytesIO()
@@ -81,9 +74,9 @@ class BytesPodConverterCatalog(PodConverterCatalog[BytesPodConverter]):
         return buffer.getvalue()
 
     def pack_partial(self, type_, buffer, obj, **kwargs):
-        args = type_, buffer, obj
         error_msg = "No converter was able to unpack raw data"
-        self._call_until_success("pack_partial", args, kwargs, error_msg)
+        converter = self._get_converter_or_raise(type_, error_msg)
+        return converter.pack_partial(type_, buffer, obj, **kwargs)
 
     def unpack(self, type_, raw, checked=False, **kwargs) -> object:
         buffer = BytesIO(raw)
@@ -95,9 +88,9 @@ class BytesPodConverterCatalog(PodConverterCatalog[BytesPodConverter]):
         return obj
 
     def unpack_partial(self, type_, buffer, **kwargs) -> Tuple[bool, object]:
-        args = type_, buffer
         error_msg = "No converter was able to pack object"
-        return self._call_until_success("unpack_partial", args, kwargs, error_msg)
+        converter = self._get_converter_or_raise(type_, error_msg)
+        return converter.unpack_partial(type_, buffer, **kwargs)
 
     def generate_helpers(self, type_) -> Dict[str, Callable]:
         helpers = super().generate_helpers(type_)
@@ -176,4 +169,4 @@ class BytesPodConverterCatalog(PodConverterCatalog[BytesPodConverter]):
 
 
 _BYTES_CATALOG = BytesPodConverterCatalog()
-_BYTES_CATALOG.register(CustomBytesPodConverter())
+_BYTES_CATALOG.register(SelfBytesPodConverter().get_mapping)

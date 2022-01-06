@@ -2,9 +2,13 @@
 """
 Core functionality and base classes of pod packing/unpacking are implemented here.
 """
-from typing import List, Dict, Callable, TypeVar, Generic
+from abc import ABC, abstractmethod
+from typing import List, Dict, Callable, TypeVar, Generic, Type, Optional
+
 
 PodConverter = TypeVar("PodConverter")
+
+POD_SELF_CONVERTER = "__pod_self_converter__"
 
 
 class PodConverterCatalog(Generic[PodConverter]):
@@ -13,16 +17,24 @@ class PodConverterCatalog(Generic[PodConverter]):
     success happens.
     """
 
-    converters: List[PodConverter]
+    converters: List[Callable[[Type], Optional[PodConverter]]]
 
     def __init__(self):
         self.converters = []
 
-    def register(self, converter: PodConverter):
+    def register(self, converter: Callable[[Type], Optional[PodConverter]]):
         """
         Registers a new converter to be used if previous converters fail to pack/unpack.
         """
         self.converters.append(converter)
+
+    def _get_converter_or_raise(self, type_, msg):
+        for mapping in self.converters:
+            converter = mapping(type_)
+            if converter:
+                return converter
+
+        raise ValueError(msg)
 
     def _call_until_success(self, name, args, kwargs, error_msg):
         for converter in self.converters:
@@ -41,9 +53,9 @@ class PodConverterCatalog(Generic[PodConverter]):
         :param kwargs: keyword arguments to be passed to converters
         :return: A bool indicating success and the packed object (None if unsuccessful)
         """
-        args = type_, obj
         error_msg = "No converter was able to pack object"
-        return self._call_until_success("pack", args, kwargs, error_msg)
+        converter = self._get_converter_or_raise(type_, error_msg)
+        return converter.pack(type_, obj, **kwargs)
 
     def unpack(self, type_, raw, **kwargs):
         """
@@ -55,9 +67,9 @@ class PodConverterCatalog(Generic[PodConverter]):
         :param kwargs: keyword arguments to be passed to converters
         :return: A bool indicating success and the unpacked object (None if unsuccessful)
         """
-        args = type_, raw
         error_msg = "No converter was able to unpack raw data"
-        return self._call_until_success("unpack", args, kwargs, error_msg)
+        converter = self._get_converter_or_raise(type_, error_msg)
+        return converter.unpack(type_, raw, **kwargs)
 
     def generate_helpers(self, type_) -> Dict[str, Callable]:
         return dict()

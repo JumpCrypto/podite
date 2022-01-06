@@ -5,9 +5,9 @@ from typing import Optional, Type
 from pod.bytes import _BYTES_CATALOG
 from pod.types.atomic import U8
 from pod.decorators import (
-    _POD_OPTIONS,
-    _POD_OPTIONS_OVERRIDE,
-    _POD_OPTIONS_DATACLASS_FN,
+    POD_OPTIONS,
+    POD_OPTIONS_OVERRIDE,
+    POD_OPTIONS_DATACLASS_FN,
 )
 
 _VALUES_TO_NAMES = "__enum_values_to_names__"
@@ -24,8 +24,8 @@ class EnumMeta(type):
 
     def __new__(mcs, clsname, bases, classdict):
         member_names = classdict._member_names
-        if _POD_OPTIONS in member_names:
-            member_names.remove(_POD_OPTIONS)
+        if POD_OPTIONS in member_names:
+            member_names.remove(POD_OPTIONS)
 
         if not member_names:
             return super().__new__(mcs, clsname, bases, classdict)
@@ -118,8 +118,8 @@ class Enum(int, metaclass=EnumMeta):  # type: ignore
     field: Optional[Type]
 
     __pod_options__ = {
-        _POD_OPTIONS_OVERRIDE: ("to_bytes", "from_bytes"),
-        _POD_OPTIONS_DATACLASS_FN: None,
+        POD_OPTIONS_OVERRIDE: ("to_bytes", "from_bytes"),
+        POD_OPTIONS_DATACLASS_FN: None,
     }
 
     def __new__(cls, value, field=None):

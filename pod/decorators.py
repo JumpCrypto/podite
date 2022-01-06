@@ -4,11 +4,11 @@ from typing import Union, Iterable, Container, Callable, Dict, Literal
 from dataclasses import dataclass
 
 from pod import get_catalog
+from pod.core import POD_SELF_CONVERTER
 
-
-_POD_OPTIONS = "__pod_options__"
-_POD_OPTIONS_OVERRIDE = "override"
-_POD_OPTIONS_DATACLASS_FN = "dataclass_fn"
+POD_OPTIONS = "__pod_options__"
+POD_OPTIONS_OVERRIDE = "override"
+POD_OPTIONS_DATACLASS_FN = "dataclass_fn"
 
 
 def _process_class(
@@ -17,18 +17,20 @@ def _process_class(
     override: Union[bool, Container[str], Literal["auto"]],
     dataclass_fn,
 ):
-    pod_config = getattr(type_, _POD_OPTIONS, {})
+    pod_config = getattr(type_, POD_OPTIONS, {})
     if dataclass_fn == "auto":
         if issubclass(type_, enum.Enum):
             dataclass_fn = None
         else:
-            dataclass_fn = pod_config.get(_POD_OPTIONS_DATACLASS_FN, dataclass)
+            dataclass_fn = pod_config.get(POD_OPTIONS_DATACLASS_FN, dataclass)
 
     if dataclass_fn:
         type_ = dataclass_fn(type_)
 
     if override == "auto":
-        override = pod_config.get(_POD_OPTIONS_OVERRIDE, False)
+        override = pod_config.get(POD_OPTIONS_OVERRIDE, False)
+
+    setattr(type_, POD_SELF_CONVERTER, converters)
 
     @classmethod  # type: ignore[misc]
     def pack(cls, obj, converter, **kwargs):
