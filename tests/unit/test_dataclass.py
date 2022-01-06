@@ -10,7 +10,7 @@ def test_simple():
         z: U128
 
     assert A.is_static()
-    assert A.calc_max_size() == 22  # = 4(x) + 2(ay) + 16(by)
+    assert A.calc_max_size() == 22  # = 4(x) + 2(y) + 16(z)
 
     a1 = A(x=5, y=18, z=12)
     pa = A.to_bytes(a1)
