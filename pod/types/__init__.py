@@ -47,3 +47,5 @@ from .array import (
 )
 
 from .enum import Enum
+
+from .rust import Option
