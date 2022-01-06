@@ -13,7 +13,7 @@ from pod.decorators import (
 _VALUES_TO_NAMES = "__enum_values_to_names__"
 _NAMES_TO_VARIANTS = "__enum_names_to_variants__"
 
-_SAME_LEN_VARIANTS = "__enum_same_len_variants__"
+_ENUM_PACKED = "__enum_packed__"
 _ENUM_VALUE_TYPE = "__enum_value_type__"
 
 
@@ -169,7 +169,7 @@ class Enum(int, metaclass=EnumMeta):  # type: ignore
 
     @classmethod
     def _is_static(cls) -> bool:
-        if getattr(cls, _SAME_LEN_VARIANTS, False):
+        if not getattr(cls, _ENUM_PACKED, True):
             return True
 
         for variant in getattr(cls, _NAMES_TO_VARIANTS).values():

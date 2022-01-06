@@ -71,7 +71,7 @@ class BytesPodConverterCatalog(PodConverterCatalog[BytesPodConverter]):
         """
         Unpacks obj according to given type_ by trying all registered converters.
         """
-        error_msg = "No converter was able to calculate maximum size of obj"
+        error_msg = f"No converter was able to calculate maximum size of type {type_}"
         return self._call_until_success("calc_max_size", (type_,), {}, error_msg)
 
     def pack(self, type_, obj, **kwargs):

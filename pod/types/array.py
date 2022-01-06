@@ -1,8 +1,7 @@
-from typing import Tuple
-
 from .atomic import U32
 from ..bytes import _BYTES_CATALOG
 from ..decorators import pod
+from ._utils import _GetitemToCall
 
 
 def _fixed_len_array(name, type_, length):
@@ -229,24 +228,6 @@ def _var_len_str(name, max_length=None, length_type=None, encoding="UTF-8"):
     _StrPod.__qualname__ = _StrPod.__name__
 
     return _StrPod
-
-
-class _GetitemToCall:
-    def __init__(self, name, func):
-        self.name = name
-        self.func = func
-
-    def __getitem__(self, args):
-        if isinstance(args, tuple):
-            return self.func(self.name, *args)
-        else:
-            return self.func(self.name, args)
-
-    def __str__(self):
-        return f"{_GetitemToCall.__module__}.{self.name}"
-
-    def __repr__(self):
-        return str(self)
 
 
 FixedLenArray = _GetitemToCall("FixedLenArray", _fixed_len_array)
