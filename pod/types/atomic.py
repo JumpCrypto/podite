@@ -60,18 +60,18 @@ I8l = new_atomic_type("I8l", int, "<b", int)
 I8b = new_atomic_type("I8b", int, ">b", int)
 I8 = new_atomic_type("I8", int, "{}b", int)
 
-U8l = new_atomic_type("I8l", int, "<B", int)
-U8b = new_atomic_type("I8b", int, ">B", int)
-U8 = new_atomic_type("I8", int, "{}B", int)
+U8l = new_atomic_type("U8l", int, "<B", int)
+U8b = new_atomic_type("U8b", int, ">B", int)
+U8 = new_atomic_type("U8", int, "{}B", int)
 
 # 2-byte integers
 I16l = new_atomic_type("I16l", int, "<h", int)
 I16b = new_atomic_type("I16b", int, ">h", int)
 I16 = new_atomic_type("I16", int, "{}h", int)
 
-U16l = new_atomic_type("I16l", int, "<H", int)
-U16b = new_atomic_type("I16b", int, ">H", int)
-U16 = new_atomic_type("I16", int, "{}H", int)
+U16l = new_atomic_type("U16l", int, "<H", int)
+U16b = new_atomic_type("U16b", int, ">H", int)
+U16 = new_atomic_type("U16", int, "{}H", int)
 
 
 # 4-byte integers
@@ -79,9 +79,9 @@ I32l = new_atomic_type("I32l", int, "<i", int)
 I32b = new_atomic_type("I32b", int, ">i", int)
 I32 = new_atomic_type("I32", int, "{}i", int)
 
-U32l = new_atomic_type("I32l", int, "<I", int)
-U32b = new_atomic_type("I32b", int, ">I", int)
-U32 = new_atomic_type("I32", int, "{}I", int)
+U32l = new_atomic_type("U32l", int, "<I", int)
+U32b = new_atomic_type("U32b", int, ">I", int)
+U32 = new_atomic_type("U32", int, "{}I", int)
 
 
 # 8-byte integers
@@ -89,9 +89,9 @@ I64l = new_atomic_type("I64l", int, "<q", int)
 I64b = new_atomic_type("I64b", int, ">q", int)
 I64 = new_atomic_type("I64", int, "{}q", int)
 
-U64l = new_atomic_type("I64l", int, "<Q", int)
-U64b = new_atomic_type("I64b", int, ">Q", int)
-U64 = new_atomic_type("I64", int, "{}Q", int)
+U64l = new_atomic_type("U64l", int, "<Q", int)
+U64b = new_atomic_type("U64b", int, ">Q", int)
+U64 = new_atomic_type("U64", int, "{}Q", int)
 
 
 # 16-byte integers
