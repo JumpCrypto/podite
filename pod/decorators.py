@@ -1,25 +1,34 @@
 import enum
 
-from typing import Union, Iterable, Container, Callable, Dict
+from typing import Union, Iterable, Container, Callable, Dict, Literal
 from dataclasses import dataclass
 
 from pod import get_catalog
 
 
+_POD_OPTIONS = "__pod_options__"
+_POD_OPTIONS_OVERRIDE = "override"
+_POD_OPTIONS_DATACLASS_FN = "dataclass_fn"
+
+
 def _process_class(
     type_,
-    converters: Iterable[str] = ("bytes",),
-    override: Union[bool, Container[str]] = False,
-    dataclass_fn="auto",
+    converters: Iterable[str],
+    override: Union[bool, Container[str], Literal["auto"]],
+    dataclass_fn,
 ):
+    pod_config = getattr(type_, _POD_OPTIONS, {})
     if dataclass_fn == "auto":
         if issubclass(type_, enum.Enum):
             dataclass_fn = None
         else:
-            dataclass_fn = dataclass
+            dataclass_fn = pod_config.get(_POD_OPTIONS_DATACLASS_FN, dataclass)
 
     if dataclass_fn:
         type_ = dataclass_fn(type_)
+
+    if override == "auto":
+        override = pod_config.get(_POD_OPTIONS_OVERRIDE, False)
 
     @classmethod  # type: ignore[misc]
     def pack(cls, obj, converter, **kwargs):
@@ -57,7 +66,7 @@ def pod(
     cls=None,
     /,
     converters=("bytes",),
-    override: Union[bool, Container[str]] = False,
+    override: Union[bool, Container[str], Literal["auto"]] = "auto",
     dataclass_fn="auto",
 ):
     def wrap(cls_):

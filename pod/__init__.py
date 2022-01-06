@@ -1,6 +1,7 @@
 from typing import Dict
 
 from .core import PodConverterCatalog
+
 from .bytes import _BYTES_CATALOG
 
 _CATALOGS: Dict[str, PodConverterCatalog] = {
