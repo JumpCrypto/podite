@@ -46,10 +46,12 @@ from .array import (
     Str,
 )
 
-from .enum import Enum
+from .enum import Enum, Variant
 
 from .rust import Option
 
 from .builtin import register_builtins
+
+from .misc import Static
 
 register_builtins()

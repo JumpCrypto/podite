@@ -45,5 +45,7 @@ from .types import (
     Bytes,
     Str,
     Enum,
+    Variant,
     Option,
+    Static,
 )
