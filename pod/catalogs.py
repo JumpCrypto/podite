@@ -2,10 +2,12 @@ from typing import Dict
 
 from . import PodConverterCatalog
 from .bytes import _BYTES_CATALOG
+from .json import _JSON_CATALOG
 
 
 _CATALOGS: Dict[str, PodConverterCatalog] = {
     "bytes": _BYTES_CATALOG,
+    "json": _JSON_CATALOG,
 }
 
 

@@ -3,26 +3,35 @@ from dataclasses import dataclass
 from typing import Optional, Type
 
 from pod.bytes import _BYTES_CATALOG
-from pod.types.atomic import U8
+from pod.json import _JSON_CATALOG
 from pod.decorators import (
     POD_OPTIONS,
     POD_OPTIONS_OVERRIDE,
     POD_OPTIONS_DATACLASS_FN,
 )
 
+from .atomic import U8
+
 _VALUES_TO_NAMES = "__enum_values_to_names__"
 _NAMES_TO_VARIANTS = "__enum_names_to_variants__"
 
-_ENUM_VALUE_TYPE = "__enum_value_type__"
+ENUM_TAG_TYPE = "__enum_tag_type__"
+ENUM_TAG_NAME = "__enum_tag_name__"
+ENUM_TAG_VALUE = "__enum_tag_value__"
+ENUM_DEFAULT_TAG_NAME = "name"
+ENUM_DEFAULT_TAG_VALUE = None
 
 
 class EnumMeta(type):
     @classmethod
     def __prepare__(metacls, cls, bases):
-        return enum._EnumDict()  # type: ignore
+        enum_dict = enum._EnumDict()  # type: ignore
+        enum_dict._cls_name = cls
+        return enum_dict
 
     def __new__(mcs, clsname, bases, classdict):
         member_names = classdict._member_names
+
         if POD_OPTIONS in member_names:
             member_names.remove(POD_OPTIONS)
 
@@ -85,7 +94,8 @@ class EnumMeta(type):
         return cls
 
     def __getitem__(self, item):
-        return getattr(self, _NAMES_TO_VARIANTS)[item]
+        variant = getattr(self, _NAMES_TO_VARIANTS)[item]
+        return self(variant.value)
 
 
 @dataclass(init=False)
@@ -104,6 +114,31 @@ class Variant:
             self.value = 0
         else:
             self.value = self.prev_value + 1
+
+    def to_bytes_partial(self, buffer, obj):
+        # Notice that tag value is already serialized
+        if self.field is not None:
+            _BYTES_CATALOG.pack_partial(self.field, buffer, obj.field)
+
+    def from_bytes_partial(self, buffer, instance):
+        # Notice is that tag value is already deserialized
+        if self.field is not None:
+            field = _BYTES_CATALOG.unpack_partial(self.field, buffer)
+            instance = instance(field)
+
+        return instance
+
+    def to_json(self, obj, result):
+        # Tag name/value is encoded in result
+        if self.field is not None:
+            result["field"] = _JSON_CATALOG.pack(self.field, obj.field)
+
+    def from_json(self, instance, raw):
+        # Tag name/value is encoded in raw
+        if self.field is not None:
+            field = _JSON_CATALOG.unpack(self.field, raw["field"])
+            return instance(field)
+        return instance
 
 
 class Enum(int, metaclass=EnumMeta):  # type: ignore
@@ -156,16 +191,6 @@ class Enum(int, metaclass=EnumMeta):  # type: ignore
         # TODO what is the right exception to raise?
         raise TypeError("Enum objects are immutable")
 
-    def get_variant(self):
-        return getattr(type(self), _NAMES_TO_VARIANTS)[self.get_name()]
-
-    def get_field_type(self):
-        return self.get_variant().field
-
-    @classmethod
-    def get_val_type(cls):
-        return getattr(cls, _ENUM_VALUE_TYPE, U8)
-
     @classmethod
     def _is_static(cls) -> bool:
         for variant in getattr(cls, _NAMES_TO_VARIANTS).values():
@@ -175,8 +200,8 @@ class Enum(int, metaclass=EnumMeta):  # type: ignore
 
     @classmethod
     def _calc_max_size(cls):
-        val_type = cls.get_val_type()
-        val_size = _BYTES_CATALOG.calc_max_size(val_type)
+        tag_type = cls.get_tag_type()
+        val_size = _BYTES_CATALOG.calc_max_size(tag_type)
         max_field_size = 0
         for variant in getattr(cls, _NAMES_TO_VARIANTS).values():
             if variant.field is None:
@@ -191,25 +216,70 @@ class Enum(int, metaclass=EnumMeta):  # type: ignore
 
     @classmethod
     def _to_bytes_partial(cls, buffer, obj):
-        val_type = cls.get_val_type()
-        _BYTES_CATALOG.pack_partial(val_type, buffer, obj)
+        _BYTES_CATALOG.pack_partial(cls.get_tag_type(), buffer, obj)
 
-        field_type = obj.get_field_type()
-        if field_type is not None:
-            _BYTES_CATALOG.pack_partial(field_type, buffer, obj.field)
+        variant: Variant = obj.get_variant()
+        variant.to_bytes_partial(buffer, obj)
 
     @classmethod
     def _from_bytes_partial(cls, buffer):
-        val_type = cls.get_val_type()
-        value = _BYTES_CATALOG.unpack_partial(val_type, buffer)
+        tag_type = cls.get_tag_type()
+        tag = _BYTES_CATALOG.unpack_partial(tag_type, buffer)
 
-        instance = cls(value)
-        field_type = instance.get_field_type()
-        if field_type is not None:
-            field = _BYTES_CATALOG.unpack_partial(field_type, buffer)
-            instance = instance(field)
+        instance = cls(tag)
+        variant = instance.get_variant()
+        return variant.from_bytes_partial(buffer, instance)
 
-        return instance
+    @classmethod
+    def _to_json(cls, obj):
+        result = {}
+
+        name_key = cls._get_json_tag_name_key()
+        if name_key is not None:
+            result[name_key] = obj.get_variant().name
+
+        value_key = cls._get_json_tag_value_key()
+        if value_key is not None:
+            result[value_key] = int(obj)
+
+        variant: Variant = obj.get_variant()
+        variant.to_json(obj, result)
+
+        return result
+
+    @classmethod
+    def _from_json(cls, raw):
+        name_key = cls._get_json_tag_name_key()
+        if name_key is not None:
+            name = raw[name_key]
+            instance = cls[name]
+        else:
+            value_key = cls._get_json_tag_value_key()
+            if value_key is not None:
+                value = raw[value_key]
+                instance = cls(value)
+            else:
+                raise RuntimeError(
+                    "Either name or value should be present for unpacking json"
+                )
+
+        variant = instance.get_variant()
+        return variant.from_json(instance, raw)
+
+    @classmethod
+    def get_tag_type(cls):
+        return getattr(cls, ENUM_TAG_TYPE, U8)
+
+    @classmethod
+    def _get_json_tag_name_key(cls):
+        return getattr(cls, ENUM_TAG_NAME, ENUM_DEFAULT_TAG_NAME)
+
+    @classmethod
+    def _get_json_tag_value_key(cls):
+        return getattr(cls, ENUM_TAG_VALUE, ENUM_DEFAULT_TAG_VALUE)
+
+    def get_variant(self) -> Variant:
+        return getattr(type(self), _NAMES_TO_VARIANTS)[self.get_name()]
 
     def get_name(self):
         return getattr(type(self), _VALUES_TO_NAMES)[int(self)]

@@ -3,7 +3,7 @@ from typing import Optional, Tuple
 from pod import pod, U16, U32, get_catalog
 
 
-def test_bool():
+def test_bytes_bool():
     @pod
     class A:
         x: bool
@@ -17,7 +17,17 @@ def test_bool():
     assert not A.from_bytes(b"\x00\x05\x06").x
 
 
-def test_optional():
+def test_json_bool():
+    @pod
+    class A:
+        x: bool
+        y: U16
+
+    assert A.from_json(dict(x=True, y=5)).x is True
+    assert A.from_json(dict(x=False, y=5)).x is False
+
+
+def test_bytes_optional():
     type_ = Optional[U32]
     catalog = get_catalog("bytes")
 
@@ -28,7 +38,23 @@ def test_optional():
     assert catalog.unpack(type_, b"\x01\x05\x00\x00\x00") == 5
 
 
-def test_tuple_static():
+def test_json_optional():
+    @pod
+    class A:
+        x: bool
+        y: U32
+
+    type_ = Optional[A]
+    catalog = get_catalog("json")
+
+    assert catalog.pack(type_, None) is None
+    assert catalog.unpack(type_, None) is None
+
+    assert catalog.pack(type_, A(x=True, y=18)) == dict(x=True, y=18)
+    assert catalog.unpack(type_, dict(x=True, y=18)) == A(x=True, y=18)
+
+
+def test_bytes_tuple_static():
     type_ = Tuple[bool, U32]
     catalog = get_catalog("bytes")
 
@@ -39,7 +65,20 @@ def test_tuple_static():
     assert catalog.unpack(type_, b"\x00\x00\x06\x00\x00") == (False, 6 * 2 ** 8)
 
 
-def test_tuple_dynamic():
+def test_json_tuple_static():
+    @pod
+    class A:
+        x: bool
+        y: U32
+
+    type_ = Tuple[A, U32]
+    catalog = get_catalog("json")
+
+    assert catalog.pack(type_, (A(x=True, y=9), 18)) == (dict(x=True, y=9), 18)
+    assert catalog.unpack(type_, (dict(x=True, y=9), 18)) == (A(x=True, y=9), 18)
+
+
+def test_bytes_tuple_dynamic():
     type_ = Tuple[bool, Optional[U32]]
     catalog = get_catalog("bytes")
 
@@ -48,3 +87,14 @@ def test_tuple_dynamic():
 
     assert catalog.unpack(type_, b"\x01\x00") == (True, None)
     assert catalog.unpack(type_, b"\x00\x01\x06\x00\x00\x00") == (False, 6)
+
+
+def test_json_tuple_dynamic():
+    type_ = Tuple[bool, Optional[U32]]
+    catalog = get_catalog("json")
+
+    assert catalog.pack(type_, (True, 18)) == (True, 18)
+    assert catalog.unpack(type_, (True, 18)) == (True, 18)
+
+    assert catalog.pack(type_, (False, None)) == (False, None)
+    assert catalog.unpack(type_, (False, None)) == (False, None)

@@ -67,7 +67,7 @@ def _process_class(
 def pod(
     cls=None,
     /,
-    converters=("bytes",),
+    converters=("bytes", "json"),
     override: Union[bool, Container[str], Literal["auto"]] = "auto",
     dataclass_fn="auto",
 ):

@@ -2,15 +2,15 @@ from io import BytesIO
 from typing import Type
 
 from ._utils import _GetitemToCall
-from .. import get_catalog
+from ..bytes import _BYTES_CATALOG
+from ..json import _JSON_CATALOG
 from ..decorators import pod
 
 
 def _static(name, type_: Type, length="auto"):
-    catalog = get_catalog("bytes")
 
     if length == "auto":
-        length = catalog.calc_max_size(type_)
+        length = _BYTES_CATALOG.calc_max_size(type_)
 
     @pod(override=("from_bytes", "to_bytes"), dataclass_fn=None)
     class _Static:  # type: ignore
@@ -25,7 +25,7 @@ def _static(name, type_: Type, length="auto"):
         @classmethod
         def _to_bytes_partial(cls, buffer, obj):
             before = buffer.tell()
-            catalog.pack_partial(type_, buffer, obj)
+            _BYTES_CATALOG.pack_partial(type_, buffer, obj)
             after = buffer.tell()
 
             delta = after - before
@@ -40,7 +40,7 @@ def _static(name, type_: Type, length="auto"):
         @classmethod
         def _from_bytes_partial(cls, buffer: BytesIO):
             before = buffer.tell()
-            obj = catalog.unpack_partial(type_, buffer)
+            obj = _BYTES_CATALOG.unpack_partial(type_, buffer)
             after = buffer.tell()
 
             delta = after - before
@@ -53,6 +53,14 @@ def _static(name, type_: Type, length="auto"):
                 buffer.read(length)
 
             return obj
+
+        @classmethod
+        def _to_json(cls, obj):
+            return _JSON_CATALOG.pack(type_, obj)
+
+        @classmethod
+        def _from_json(cls, obj):
+            return _JSON_CATALOG.unpack(type_, obj)
 
     _Static.__name__ = f"{name}[{type_}, {length}]"
     _Static.__qualname__ = _Static.__name__

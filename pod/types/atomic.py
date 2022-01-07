@@ -36,6 +36,14 @@ def new_atomic_type(name: str, base: type, code: str, unpacker, packer=lambda x:
             decoded, *_ = struct.unpack(cls._get_code(), encoded)
             return unpacker(decoded)
 
+        @classmethod
+        def _to_json(cls, obj):
+            return obj
+
+        @classmethod
+        def _from_json(cls, obj):
+            return obj
+
     Atom.__name__ = name
     Atom.__qualname__ = name
 

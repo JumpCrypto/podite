@@ -1,4 +1,5 @@
 from .atomic import (
+    Bool,
     I8l,
     I8b,
     I8,

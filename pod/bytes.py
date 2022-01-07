@@ -74,7 +74,7 @@ class BytesPodConverterCatalog(PodConverterCatalog[BytesPodConverter]):
         return buffer.getvalue()
 
     def pack_partial(self, type_, buffer, obj, **kwargs):
-        error_msg = "No converter was able to unpack raw data"
+        error_msg = "No converter was able to pack raw data"
         converter = self._get_converter_or_raise(type_, error_msg)
         return converter.pack_partial(type_, buffer, obj, **kwargs)
 
@@ -88,7 +88,7 @@ class BytesPodConverterCatalog(PodConverterCatalog[BytesPodConverter]):
         return obj
 
     def unpack_partial(self, type_, buffer, **kwargs) -> Tuple[bool, object]:
-        error_msg = "No converter was able to pack object"
+        error_msg = "No converter was able to unpack object"
         converter = self._get_converter_or_raise(type_, error_msg)
         return converter.unpack_partial(type_, buffer, **kwargs)
 
