@@ -39,10 +39,10 @@ class JsonPodConverterCatalog(PodConverterCatalog[JsonPodConverter]):
         converter = self._get_converter_or_raise(type_, error_msg)
         return converter.pack_obj(type_, obj, **kwargs)
 
-    def unpack(self, type_, obj, checked=False, **kwargs) -> object:
+    def unpack(self, type_, raw, **kwargs) -> object:
         error_msg = "No converter was able to unpack object"
         converter = self._get_converter_or_raise(type_, error_msg)
-        return converter.unpack_obj(type_, obj, **kwargs)
+        return converter.unpack_obj(type_, raw, **kwargs)
 
     def generate_helpers(self, type_) -> Dict[str, Callable]:
         helpers = super().generate_helpers(type_)
@@ -79,7 +79,7 @@ class JsonPodConverterCatalog(PodConverterCatalog[JsonPodConverter]):
         def _from_json(cls, obj, **kwargs):
             values = {}
             for field in fields(cls):
-                values[field.name] = self.unpack(field.type, obj)
+                values[field.name] = self.unpack(field.type, obj[field.name])
             return cls(**values)
 
         helpers[TO_JSON] = _to_json

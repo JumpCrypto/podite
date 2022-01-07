@@ -2,7 +2,7 @@ from pod.decorators import pod
 from pod.types.atomic import I8, I16, U8, I32, U128
 
 
-def test_simple():
+def test_bytes_simple():
     @pod
     class A:
         x: I16
@@ -20,7 +20,19 @@ def test_simple():
     assert a1 == a2
 
 
-def test_inheritance():
+def test_json_simple():
+    @pod
+    class A:
+        x: I16
+        y: I32
+        z: U128
+
+    a = A(x=5, y=18, z=12)
+    assert A.to_json(a) == dict(x=5, y=18, z=12)
+    assert a == A.from_json(dict(x=5, y=18, z=12))
+
+
+def test_bytes_inheritance():
     @pod
     class A:
         x: I8
@@ -40,3 +52,20 @@ def test_inheritance():
 
     b2 = B.from_bytes(pb)
     assert b1 == b2
+
+
+def test_json_inheritance():
+    @pod
+    class A:
+        x: I8
+        ay: U8
+
+    @pod
+    class B(A):
+        x: I32
+        by: U128
+
+    b1 = B(x=5, ay=18, by=12)
+
+    assert B.to_json(b1) == dict(x=5, ay=18, by=12)
+    assert b1 == B.from_json(dict(x=5, ay=18, by=12))

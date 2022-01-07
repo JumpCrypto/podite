@@ -16,5 +16,3 @@ def test_option_packed():
     expect = type_.SOME(5)
 
     assert actual == expect
-
-

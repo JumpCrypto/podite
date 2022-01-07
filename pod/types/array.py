@@ -1,5 +1,6 @@
 from .atomic import U32
 from ..bytes import _BYTES_CATALOG
+from ..json import _JSON_CATALOG
 from ..decorators import pod
 from ._utils import _GetitemToCall
 
@@ -29,6 +30,14 @@ def _fixed_len_array(name, type_, length):
             for elem in obj:
                 _BYTES_CATALOG.pack_partial(type_, buffer, elem)
 
+        @classmethod
+        def _to_json(cls, obj):
+            return [_JSON_CATALOG.pack(type_, e) for e in obj]
+
+        @classmethod
+        def _from_json(cls, raw):
+            return [_JSON_CATALOG.unpack(type_, e) for e in raw]
+
     _ArrayPod.__name__ = f"{name}[{type_}, {length}]"
     _ArrayPod.__qualname__ = _ArrayPod.__name__
 
@@ -53,6 +62,22 @@ def _fixed_len_bytes(name, length):
         @classmethod
         def _to_bytes_partial(cls, obj, buffer):
             buffer.write(obj.ljust(length, b"\x00"))
+
+        @classmethod
+        def _to_json(cls, obj):
+            return list(obj)
+
+        @classmethod
+        def _from_json(cls, raw):
+            return bytes(raw)
+
+        @classmethod
+        def _to_json(cls, obj):
+            return list(obj)
+
+        @classmethod
+        def _from_json(cls, raw):
+            return bytes(raw)
 
     _BytesPod.__name__ = f"{name}[{length}]"
     _BytesPod.__qualname__ = _BytesPod.__name__
@@ -92,6 +117,14 @@ def _fixed_len_str(name, length, encoding="UTF-8", autopad=True):
                 raise ValueError("len(value) < size")
 
             buffer.write(encoded.ljust(length, b"\x00"))
+
+        @classmethod
+        def _to_json(cls, obj):
+            return obj
+
+        @classmethod
+        def _from_json(cls, raw):
+            return raw
 
     _StrPod.__name__ = f"{name}[{length}, encoding={encoding}]"
     _StrPod.__qualname__ = _StrPod.__name__
@@ -140,6 +173,14 @@ def _var_len_array(name, type_, max_length=None, length_type=None):
             for elem in obj:
                 _BYTES_CATALOG.pack_partial(type_, buffer, elem)
 
+        @classmethod
+        def _to_json(cls, obj):
+            return [_JSON_CATALOG.pack(type_, e) for e in obj]
+
+        @classmethod
+        def _from_json(cls, raw):
+            return [_JSON_CATALOG.unpack(type_, e) for e in raw]
+
     _ArrayPod.__name__ = (
         f"{name}[{type_}, length_type={length_type}, max_length={max_length}]"
     )
@@ -183,6 +224,14 @@ def _var_len_bytes(name, max_length=None, length_type=None):
             _BYTES_CATALOG.pack_partial(length_type, buffer, len(obj))
             buffer.write(obj)
 
+        @classmethod
+        def _to_json(cls, obj):
+            return list(obj)
+
+        @classmethod
+        def _from_json(cls, raw):
+            return bytes(raw)
+
     _BytesPod.__name__ = f"{name}[length_type={length_type}, max_length={max_length}]"
     _BytesPod.__qualname__ = _BytesPod.__name__
 
@@ -223,6 +272,14 @@ def _var_len_str(name, max_length=None, length_type=None, encoding="UTF-8"):
 
             _BYTES_CATALOG.pack_partial(length_type, buffer, len(obj))
             buffer.write(obj.encode(encoding))
+
+        @classmethod
+        def _to_json(cls, obj):
+            return obj
+
+        @classmethod
+        def _from_json(cls, raw):
+            return raw
 
     _StrPod.__name__ = f"{name}[max_length={max_length}, length_type={length_type}, encoding={encoding}]"
     _StrPod.__qualname__ = _StrPod.__name__
