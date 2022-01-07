@@ -98,3 +98,24 @@ def test_json_tuple_dynamic():
 
     assert catalog.pack(type_, (False, None)) == (False, None)
     assert catalog.unpack(type_, (False, None)) == (False, None)
+
+
+def test_json_int():
+    catalog = get_catalog("json")
+
+    assert catalog.pack(int, 10) == 10
+    assert catalog.unpack(int, 10) == 10
+
+
+def test_json_str():
+    catalog = get_catalog("json")
+
+    assert catalog.pack(str, "test") == "test"
+    assert catalog.unpack(str, "test") == "test"
+
+
+def test_json_bytes():
+    catalog = get_catalog("json")
+
+    assert catalog.pack(bytes, b"test") == [ord(ch) for ch in "test"]
+    assert catalog.unpack(bytes, [ord(ch) for ch in "test"]) == b"test"

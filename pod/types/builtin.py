@@ -155,6 +155,34 @@ class TupleConverter(BytesPodConverter, JsonPodConverter):
         )
 
 
+class JsonIdentityPodConverter(JsonPodConverter):
+    def get_mapping(self, type_):
+        if type_ in (int, str):
+            return self
+
+        return None
+
+    def pack_obj(self, type_, obj, **kwargs) -> Any:
+        return obj
+
+    def unpack_obj(self, type_, obj, **kwargs) -> Any:
+        return obj
+
+
+class JsonBytesPodConverter(JsonPodConverter):
+    def get_mapping(self, type_):
+        if type_ == bytes:
+            return self
+
+        return None
+
+    def pack_obj(self, type_, obj, **kwargs) -> Any:
+        return list(obj)
+
+    def unpack_obj(self, type_, obj, **kwargs) -> Any:
+        return bytes(obj)
+
+
 def register_builtins():
     _BYTES_CATALOG.register(BoolConverter().get_mapping)
     _BYTES_CATALOG.register(OptionalConverter().get_mapping)
@@ -163,3 +191,5 @@ def register_builtins():
     _JSON_CATALOG.register(BoolConverter().get_mapping)
     _JSON_CATALOG.register(OptionalConverter().get_mapping)
     _JSON_CATALOG.register(TupleConverter().get_mapping)
+    _JSON_CATALOG.register(JsonIdentityPodConverter().get_mapping)
+    _JSON_CATALOG.register(JsonBytesPodConverter().get_mapping)
