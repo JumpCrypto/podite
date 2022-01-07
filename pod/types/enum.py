@@ -1,4 +1,4 @@
-import enum
+from enum import _is_sunder, _is_dunder, _is_descriptor  # type: ignore
 from dataclasses import dataclass
 from typing import Optional, Type
 
@@ -23,14 +23,16 @@ ENUM_DEFAULT_TAG_VALUE = None
 
 
 class EnumMeta(type):
-    @classmethod
-    def __prepare__(metacls, cls, bases):
-        enum_dict = enum._EnumDict()  # type: ignore
-        enum_dict._cls_name = cls
-        return enum_dict
+    @staticmethod
+    def get_member_names(classdict):
+        return [
+            key
+            for key, val in classdict.items()
+            if not _is_sunder(key) and not _is_dunder(key) and not _is_descriptor(val)
+        ]
 
     def __new__(mcs, clsname, bases, classdict):
-        member_names = classdict._member_names
+        member_names = mcs.get_member_names(classdict)
 
         if POD_OPTIONS in member_names:
             member_names.remove(POD_OPTIONS)
