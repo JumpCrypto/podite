@@ -1,6 +1,6 @@
 from pod.decorators import pod
 from pod.types.atomic import U16, U32
-from pod.types.enum import Enum, Variant
+from pod.types.enum import Enum, Variant, ENUM_TAG_VALUE, ENUM_TAG_NAME_MAP
 
 
 def test_bytes_enum_without_field():
@@ -26,7 +26,7 @@ def test_json_enum_without_field():
 
     @pod
     class B(Enum):
-        __enum_tag_value__ = "value"
+        __enum_options__ = {ENUM_TAG_VALUE: "value"}
         S = None
         T = None
 
@@ -70,3 +70,20 @@ def test_json_enum_with_field():
     assert A.X == A.from_json({"name": "X"})
     assert A.Y(5) == A.from_json({"name": "Y", "field": 5})
     assert A.Z(7) == A.from_json({"name": "Z", "field": 7})
+
+
+def test_json_enum_name_mapping():
+    @pod
+    class A(Enum):
+        __enum_options__ = {
+            ENUM_TAG_NAME_MAP: "lower"
+        }
+        X = None
+        Y = None
+        Z = None
+
+    assert A.to_json(A.Y) == dict(name="y")
+    assert A.to_json(A.Z) == dict(name="z")
+
+    assert A.Y == A.from_json(dict(name="y"))
+    assert A.Z == A.from_json(dict(name="z"))

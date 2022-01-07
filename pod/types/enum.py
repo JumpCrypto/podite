@@ -15,11 +15,15 @@ from .atomic import U8
 _VALUES_TO_NAMES = "__enum_values_to_names__"
 _NAMES_TO_VARIANTS = "__enum_names_to_variants__"
 
-ENUM_TAG_TYPE = "__enum_tag_type__"
-ENUM_TAG_NAME = "__enum_tag_name__"
-ENUM_TAG_VALUE = "__enum_tag_value__"
+ENUM_OPTIONS = "__enum_options__"
+ENUM_TAG_TYPE = "tag_type"
+ENUM_TAG_NAME = "json_tag_name"
+ENUM_TAG_VALUE = "json_tag_value"
+ENUM_TAG_NAME_MAP = "json_tag_name_map"
+
 ENUM_DEFAULT_TAG_NAME = "name"
 ENUM_DEFAULT_TAG_VALUE = None
+ENUM_DEFAULT_TAG_NAME_MAP = None
 
 
 class EnumMeta(type):
@@ -232,12 +236,26 @@ class Enum(int, metaclass=EnumMeta):  # type: ignore
         return variant.from_bytes_partial(buffer, instance)
 
     @classmethod
+    def _transform_name(cls, name):
+        mapping = cls._get_json_tag_name_map()
+        if mapping is None:
+            return name
+        elif mapping == "lower":
+            mapping = str.lower
+        elif mapping == "upper":
+            mapping = str.upper
+        elif mapping == "capitalize":
+            mapping = str.capitalize
+
+        return mapping(name)
+
+    @classmethod
     def _to_json(cls, obj):
         result = {}
 
         name_key = cls._get_json_tag_name_key()
         if name_key is not None:
-            result[name_key] = obj.get_variant().name
+            result[name_key] = cls._transform_name(obj.get_variant().name)
 
         value_key = cls._get_json_tag_value_key()
         if value_key is not None:
@@ -253,7 +271,12 @@ class Enum(int, metaclass=EnumMeta):  # type: ignore
         name_key = cls._get_json_tag_name_key()
         if name_key is not None:
             name = raw[name_key]
-            instance = cls[name]
+            for member_name in cls.get_member_names():
+                if cls._transform_name(member_name) == name:
+                    instance = cls[member_name]
+                    break
+            else:
+                raise ValueError(f"No member with name {name} was found in this enum.")
         else:
             value_key = cls._get_json_tag_value_key()
             if value_key is not None:
@@ -268,19 +291,33 @@ class Enum(int, metaclass=EnumMeta):  # type: ignore
         return variant.from_json(instance, raw)
 
     @classmethod
+    def get_options(cls):
+        return getattr(cls, ENUM_OPTIONS, {})
+
+    @classmethod
     def get_tag_type(cls):
-        return getattr(cls, ENUM_TAG_TYPE, U8)
+        return cls.get_options().get(ENUM_TAG_TYPE, U8)
 
     @classmethod
     def _get_json_tag_name_key(cls):
-        return getattr(cls, ENUM_TAG_NAME, ENUM_DEFAULT_TAG_NAME)
+        return cls.get_options().get(ENUM_TAG_NAME, ENUM_DEFAULT_TAG_NAME)
 
     @classmethod
     def _get_json_tag_value_key(cls):
-        return getattr(cls, ENUM_TAG_VALUE, ENUM_DEFAULT_TAG_VALUE)
+        return cls.get_options().get(ENUM_TAG_VALUE, ENUM_DEFAULT_TAG_VALUE)
+
+    @classmethod
+    def _get_json_tag_name_map(cls):
+        return cls.get_options().get(
+            ENUM_TAG_NAME_MAP, ENUM_DEFAULT_TAG_NAME_MAP
+        )
 
     def get_variant(self) -> Variant:
         return getattr(type(self), _NAMES_TO_VARIANTS)[self.get_name()]
+
+    @classmethod
+    def get_member_names(cls):
+        return tuple(getattr(cls, _VALUES_TO_NAMES).values())
 
     def get_name(self):
         return getattr(type(self), _VALUES_TO_NAMES)[int(self)]
