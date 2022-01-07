@@ -157,7 +157,7 @@ class TupleConverter(BytesPodConverter, JsonPodConverter):
 
 class JsonIdentityPodConverter(JsonPodConverter):
     def get_mapping(self, type_):
-        if type_ in (int, str):
+        if type_ in (int, str, object):
             return self
 
         return None
