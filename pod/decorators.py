@@ -38,7 +38,6 @@ def _process_class(
 
     @classmethod  # type: ignore[misc]
     def unpack(cls, raw, converter, **kwargs):
-        print(get_catalog(converter))
         return get_catalog(converter).unpack(cls, raw, **kwargs)
 
     methods: Dict[str, Callable] = {

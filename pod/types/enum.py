@@ -209,7 +209,6 @@ class Enum(int, metaclass=EnumMeta):  # type: ignore
             if variant.field is None:
                 variant_size = 0
             else:
-                print(variant.field)
                 variant_size = _BYTES_CATALOG.calc_max_size(variant.field)
 
             max_field_size = max(max_field_size, variant_size)
