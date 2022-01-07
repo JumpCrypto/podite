@@ -2,6 +2,7 @@ from .core import PodConverterCatalog
 from .catalogs import get_catalog
 from .decorators import pod
 from .types import (
+    Bool,
     I8l,
     I8b,
     I8,

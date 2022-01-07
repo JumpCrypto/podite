@@ -1,12 +1,13 @@
-from pod.types.array import (
+from pod import (
     FixedLenArray,
     FixedLenBytes,
     FixedLenStr,
     Vec,
     Str,
     Bytes,
+    U16,
+    U32,
 )
-from pod.types.atomic import U16, U32
 
 
 def test_fixed_len_array():
