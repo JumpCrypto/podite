@@ -1,4 +1,5 @@
 import enum
+import functools
 
 from typing import Union, Iterable, Container, Callable, Dict, Literal
 from dataclasses import dataclass
@@ -77,3 +78,7 @@ def pod(
         return wrap
 
     return wrap(cls)
+
+
+pod_json = functools.partial(pod, converters=("json",))
+pod_bytes = functools.partial(pod, converters=("bytes",))
