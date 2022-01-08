@@ -1,4 +1,4 @@
-from functools import cached_property
+import inspect
 from io import BytesIO
 from typing import Type
 
@@ -112,17 +112,22 @@ def _default(name, type_: Type, default=None):
 Default = _GetitemToCall("Default", _default)
 
 
-def _delayed(name, type_name):
-    import inspect
-
+def _delayed(name, type_expr):
     frame = inspect.stack()[2]
     module = inspect.getmodule(frame[0])
 
     @pod(override=("from_bytes", "to_bytes"), dataclass_fn=None)
     class _Delayed:  # type: ignore
+        type_ = None
+
         @classmethod
         def get_type(cls):
-            return getattr(module, type_name)
+            if cls.type_ is None:
+                cls.type_ = eval(
+                    type_expr, {key: getattr(module, key) for key in dir(module)}
+                )
+
+            return cls.type_
 
         @classmethod
         def _is_static(cls) -> bool:
@@ -148,7 +153,7 @@ def _delayed(name, type_name):
         def _from_json(cls, obj):
             return _JSON_CATALOG.unpack(cls.get_type(), obj)
 
-    _Delayed.__name__ = f"{name}[{type_name}]"
+    _Delayed.__name__ = f"{name}[{type_expr}]"
     _Delayed.__qualname__ = _Delayed.__name__
 
     return _Delayed
