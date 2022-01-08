@@ -49,11 +49,11 @@ def test_json_static_enum():
 
     type_ = Static[A]
 
-    assert type_.to_json(A.X) == dict(name="X")
-    assert type_.from_json(dict(name="X")) == A.X
+    assert type_.to_json(A.X) == "X"
+    assert type_.from_json("X") == A.X
 
-    assert type_.to_json(A.Y) == dict(name="Y", field=None)
-    assert type_.from_json(dict(name="Y", field=None)) == A.Y
+    assert type_.to_json(A.Y) == {"Y": None}
+    assert type_.from_json("Y") == A.Y
 
-    assert type_.to_json(A.Z(10)) == dict(name="Z", field=10)
-    assert type_.from_json(dict(name="Z", field=10)) == A.Z(10)
+    assert type_.to_json(A.Z(10)) == {"Z": 10}
+    assert type_.from_json({"Z": 10}) == A.Z(10)

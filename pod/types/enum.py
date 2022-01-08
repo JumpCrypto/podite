@@ -18,11 +18,9 @@ _NAMES_TO_VARIANTS = "__enum_names_to_variants__"
 ENUM_OPTIONS = "__enum_options__"
 ENUM_TAG_TYPE = "tag_type"
 ENUM_TAG_NAME = "json_tag_name"
-ENUM_TAG_VALUE = "json_tag_value"
 ENUM_TAG_NAME_MAP = "json_tag_name_map"
 
-ENUM_DEFAULT_TAG_NAME = "name"
-ENUM_DEFAULT_TAG_VALUE = None
+ENUM_DEFAULT_TAG_NAME = None
 ENUM_DEFAULT_TAG_NAME_MAP = None
 
 
@@ -134,15 +132,16 @@ class Variant:
 
         return instance
 
-    def to_json(self, obj, result):
-        # Tag name/value is encoded in result
-        if self.field is not None:
-            result["field"] = _JSON_CATALOG.pack(self.field, obj.field)
+    def to_json(self, obj):
+        if self.field is None:
+            return None
+
+        return _JSON_CATALOG.pack(self.field, obj.field)
 
     def from_json(self, instance, raw):
         # Tag name/value is encoded in raw
         if self.field is not None:
-            field = _JSON_CATALOG.unpack(self.field, raw["field"])
+            field = _JSON_CATALOG.unpack(self.field, raw)
             return instance(field)
         return instance
 
@@ -220,11 +219,11 @@ class Enum(int, metaclass=EnumMeta):  # type: ignore
         return val_size + max_field_size
 
     @classmethod
-    def _to_bytes_partial(cls, buffer, obj):
-        _BYTES_CATALOG.pack_partial(cls.get_tag_type(), buffer, obj)
+    def _to_bytes_partial(cls, buffer, instance):
+        _BYTES_CATALOG.pack_partial(cls.get_tag_type(), buffer, instance)
 
-        variant: Variant = obj.get_variant()
-        variant.to_bytes_partial(buffer, obj)
+        variant: Variant = cls._get_variant(instance.get_name())
+        variant.to_bytes_partial(buffer, instance)
 
     @classmethod
     def _from_bytes_partial(cls, buffer):
@@ -232,7 +231,7 @@ class Enum(int, metaclass=EnumMeta):  # type: ignore
         tag = _BYTES_CATALOG.unpack_partial(tag_type, buffer)
 
         instance = cls(tag)
-        variant = instance.get_variant()
+        variant = cls._get_variant(instance.get_name())
         return variant.from_bytes_partial(buffer, instance)
 
     @classmethod
@@ -250,45 +249,64 @@ class Enum(int, metaclass=EnumMeta):  # type: ignore
         return mapping(name)
 
     @classmethod
-    def _to_json(cls, obj):
-        result = {}
+    def _inv_transform_name(cls, name):
+        for member_name in cls.get_member_names():
+            if cls._transform_name(member_name) == name:
+                return member_name
+
+        raise ValueError(f"No member with name {name} was found in this enum.")
+
+    @classmethod
+    def _to_json(cls, instance):
+        variant: Variant = cls._get_variant(instance.get_name())
+        field_json = variant.to_json(instance)
 
         name_key = cls._get_json_tag_name_key()
-        if name_key is not None:
-            result[name_key] = cls._transform_name(obj.get_variant().name)
+        name_val = cls._transform_name(instance.get_name())
+        if name_key is None:
+            if variant.field is None:
+                return name_val
 
-        value_key = cls._get_json_tag_value_key()
-        if value_key is not None:
-            result[value_key] = int(obj)
+            return {name_val: field_json}
+        else:
+            if field_json is None:
+                field_json = {}
 
-        variant: Variant = obj.get_variant()
-        variant.to_json(obj, result)
-
-        return result
+            if not isinstance(field_json, dict):
+                raise ValueError(
+                    "When tag name is specified, the field's return value should be a dict."
+                )
+            field_json[name_key] = name_val
+            return field_json
 
     @classmethod
     def _from_json(cls, raw):
         name_key = cls._get_json_tag_name_key()
-        if name_key is not None:
-            name = raw[name_key]
-            for member_name in cls.get_member_names():
-                if cls._transform_name(member_name) == name:
-                    instance = cls[member_name]
-                    break
-            else:
-                raise ValueError(f"No member with name {name} was found in this enum.")
-        else:
-            value_key = cls._get_json_tag_value_key()
-            if value_key is not None:
-                value = raw[value_key]
-                instance = cls(value)
-            else:
-                raise RuntimeError(
-                    "Either name or value should be present for unpacking json"
-                )
+        if name_key is None:
 
-        variant = instance.get_variant()
-        return variant.from_json(instance, raw)
+            if isinstance(raw, str):
+                transformed_name = raw
+                field_json = None
+            elif isinstance(raw, dict) and len(raw) == 1:
+                transformed_name = list(raw)[0]
+                field_json = raw[transformed_name]
+            else:
+                raise ValueError(
+                    "When tag is not specified, input should be either a str or a dict of len 1."
+                )
+        elif isinstance(raw, dict) and name_key in raw:
+            transformed_name = raw[name_key]
+            field_json = dict(**raw)
+            del field_json[name_key]
+        else:
+            raise ValueError(
+                "Unknown input."
+            )  # TODO do a better error handling in this case
+
+        member_name = cls._inv_transform_name(transformed_name)
+        instance = cls[member_name]
+        variant = cls._get_variant(instance.get_name())
+        return variant.from_json(instance, field_json)
 
     @classmethod
     def get_options(cls):
@@ -303,17 +321,12 @@ class Enum(int, metaclass=EnumMeta):  # type: ignore
         return cls.get_options().get(ENUM_TAG_NAME, ENUM_DEFAULT_TAG_NAME)
 
     @classmethod
-    def _get_json_tag_value_key(cls):
-        return cls.get_options().get(ENUM_TAG_VALUE, ENUM_DEFAULT_TAG_VALUE)
+    def _get_json_tag_name_map(cls):
+        return cls.get_options().get(ENUM_TAG_NAME_MAP, ENUM_DEFAULT_TAG_NAME_MAP)
 
     @classmethod
-    def _get_json_tag_name_map(cls):
-        return cls.get_options().get(
-            ENUM_TAG_NAME_MAP, ENUM_DEFAULT_TAG_NAME_MAP
-        )
-
-    def get_variant(self) -> Variant:
-        return getattr(type(self), _NAMES_TO_VARIANTS)[self.get_name()]
+    def _get_variant(cls, name) -> Variant:
+        return getattr(cls, _NAMES_TO_VARIANTS)[name]
 
     @classmethod
     def get_member_names(cls):
