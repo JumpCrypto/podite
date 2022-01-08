@@ -1,6 +1,4 @@
-from typing import List
-
-from pod import U32, Option, Static, Enum, Variant, U16, pod, Default
+from pod import U32, Option, Static, Enum, Variant, U16, pod, Default, Delayed
 
 
 def test_bytes_static_option():
@@ -70,3 +68,23 @@ def test_json_default():
     assert A.to_json(A(5, [7])) == dict(x=5, y=[7])
     assert A(5, [7]) == A.from_json(dict(x=5, y=[7]))
     assert A(5, [18]) == A.from_json(dict(x=5))
+
+
+@pod
+class Container:
+    x: int
+    y: Delayed["Contained"]  # type: ignore
+
+
+@pod
+class Contained:
+    z: int
+
+
+def test_json_delayed():
+    raw = dict(x=5, y=dict(z=6))
+
+    actual = Container.from_json(raw)
+    expect = Container(5, Contained(6))
+
+    assert actual == expect

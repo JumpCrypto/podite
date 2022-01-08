@@ -1,3 +1,4 @@
+from functools import cached_property
 from io import BytesIO
 from typing import Type
 
@@ -109,3 +110,48 @@ def _default(name, type_: Type, default=None):
 
 
 Default = _GetitemToCall("Default", _default)
+
+
+def _delayed(name, type_name):
+    import inspect
+
+    frame = inspect.stack()[2]
+    module = inspect.getmodule(frame[0])
+
+    @pod(override=("from_bytes", "to_bytes"), dataclass_fn=None)
+    class _Delayed:  # type: ignore
+        @classmethod
+        def get_type(cls):
+            return getattr(module, type_name)
+
+        @classmethod
+        def _is_static(cls) -> bool:
+            return _BYTES_CATALOG.is_static(cls.get_type())
+
+        @classmethod
+        def _calc_max_size(cls):
+            return _BYTES_CATALOG.calc_max_size(cls.get_type())
+
+        @classmethod
+        def _to_bytes_partial(cls, buffer, obj):
+            return _BYTES_CATALOG.pack_partial(cls.get_type(), buffer, obj)
+
+        @classmethod
+        def _from_bytes_partial(cls, buffer: BytesIO):
+            return _BYTES_CATALOG.unpack_partial(cls.get_type(), buffer)
+
+        @classmethod
+        def _to_json(cls, obj):
+            return _JSON_CATALOG.pack(cls.get_type(), obj)
+
+        @classmethod
+        def _from_json(cls, obj):
+            return _JSON_CATALOG.unpack(cls.get_type(), obj)
+
+    _Delayed.__name__ = f"{name}[{type_name}]"
+    _Delayed.__qualname__ = _Delayed.__name__
+
+    return _Delayed
+
+
+Delayed = _GetitemToCall("Delayed", _delayed)
