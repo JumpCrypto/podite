@@ -172,10 +172,16 @@ class Enum(int, metaclass=EnumMeta):  # type: ignore
         return type(self)(self, field)
 
     def __repr__(self):
+        if self.field is None:
+            return "%s.%s" % (
+                self.__class__.__name__,
+                self.get_name(),
+            )
+
         return "%s.%s(field=%s)" % (
             self.__class__.__name__,
             self.get_name(),
-            self.field,
+            repr(self.field),
         )
 
     def __str__(self):
