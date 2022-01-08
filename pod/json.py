@@ -1,3 +1,5 @@
+import json
+
 from abc import ABC, abstractmethod
 from dataclasses import is_dataclass, fields
 from typing import Dict, Callable, Any
@@ -56,11 +58,26 @@ class JsonPodConverterCatalog(PodConverterCatalog[JsonPodConverter]):
             return cls.pack(obj, converter="json", **kwargs)
 
         @classmethod  # type: ignore[misc]
+        def to_json_file(cls, filename, obj, /, mode="w", **kwargs):
+            with open(filename, mode) as fin:
+                obj = cls.to_json(obj, **kwargs)
+                print(obj, file=fin)
+
+        @classmethod  # type: ignore[misc]
         def from_json(cls, raw, **kwargs):
             return cls.unpack(raw, converter="json", **kwargs)
 
+        @classmethod  # type: ignore[misc]
+        def from_json_file(cls, filename, /, **kwargs):
+            with open(filename, "r") as fin:
+                raw = json.load(fin)
+                return cls.from_json(raw, **kwargs)
+
         helpers["to_json"] = to_json
+        helpers["to_json_file"] = to_json_file
+
         helpers["from_json"] = from_json
+        helpers["from_json_file"] = from_json_file
 
         if is_dataclass(type_):
             helpers.update(self._generate_packers(type_))
