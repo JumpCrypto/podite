@@ -298,6 +298,8 @@ class Enum(int, metaclass=EnumMeta):  # type: ignore
             transformed_name = raw[name_key]
             field_json = dict(**raw)
             del field_json[name_key]
+            if not field_json:
+                field_json = None
         else:
             raise ValueError(
                 "Unknown input."

@@ -1,3 +1,5 @@
+from typing import Optional
+
 from pod.decorators import pod
 from pod.types.atomic import U16, U32
 from pod.types.enum import Enum, Variant, ENUM_TAG_NAME_MAP, ENUM_TAG_NAME
@@ -82,18 +84,23 @@ def test_json_enum_name_mapping():
 
 def test_json_enum_tagged():
     @pod
-    class A(Enum):
+    class A:
+        b: int
+        c: str
+
+    @pod
+    class B(Enum):
         __enum_options__ = {
             ENUM_TAG_NAME: "kind"
         }
         X = None
         Y = None
-        Z = None #Variant(field=U32)
+        Z = Variant(field=Optional[A])
 
-    assert A.to_json(A.Y) == dict(kind="Y")
-    assert A.to_json(A.Z) == dict(kind="Z")
-    # assert A.to_json(A.Z(5)) == dict(kind="z", field=5)
+    assert B.to_json(B.Y) == dict(kind="Y")
+    assert B.to_json(B.Z) == dict(kind="Z")
+    assert B.to_json(B.Z(A(b=5, c=6))) == dict(kind="Z", b=5, c=6)
 
-    assert A.Y == A.from_json(dict(kind="Y"))
-    assert A.Z == A.from_json(dict(kind="Z"))
-    # assert A.Z(5) == A.from_json(dict(name="z", field=5))
+    assert B.Y == B.from_json(dict(kind="Y"))
+    assert B.Z == B.from_json(dict(kind="Z"))
+    assert B.Z(A(b=5, c=6)) == B.from_json(dict(kind="Z", b=5, c=6))
