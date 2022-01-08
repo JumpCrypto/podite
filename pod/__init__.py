@@ -50,4 +50,5 @@ from .types import (
     named_fields,
     Option,
     Static,
+    Default,
 )

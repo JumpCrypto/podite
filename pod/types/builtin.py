@@ -183,6 +183,26 @@ class JsonBytesPodConverter(JsonPodConverter):
         return bytes(obj)
 
 
+class JsonListConverter(JsonPodConverter):
+    def get_mapping(self, type_):
+        if get_origin(type_) == list:
+            return self
+
+        return None
+
+    @staticmethod
+    def get_field_type(type_):
+        return get_args(type_)[0]
+
+    def pack_obj(self, type_, obj, **kwargs) -> Any:
+        field_type = self.get_field_type(type_)
+        return [_JSON_CATALOG.pack(field_type, e) for e in obj]
+
+    def unpack_obj(self, type_, obj, **kwargs) -> Any:
+        field_type = self.get_field_type(type_)
+        return [_JSON_CATALOG.unpack(field_type, e) for e in obj]
+
+
 def register_builtins():
     _BYTES_CATALOG.register(BoolConverter().get_mapping)
     _BYTES_CATALOG.register(OptionalConverter().get_mapping)
@@ -193,3 +213,4 @@ def register_builtins():
     _JSON_CATALOG.register(TupleConverter().get_mapping)
     _JSON_CATALOG.register(JsonIdentityPodConverter().get_mapping)
     _JSON_CATALOG.register(JsonBytesPodConverter().get_mapping)
+    _JSON_CATALOG.register(JsonListConverter().get_mapping)

@@ -1,4 +1,6 @@
-from pod import U32, Option, Static, Enum, Variant, U16, pod
+from typing import List
+
+from pod import U32, Option, Static, Enum, Variant, U16, pod, Default
 
 
 def test_bytes_static_option():
@@ -57,3 +59,14 @@ def test_json_static_enum():
 
     assert type_.to_json(A.Z(10)) == {"Z": 10}
     assert type_.from_json({"Z": 10}) == A.Z(10)
+
+
+def test_json_default():
+    @pod
+    class A:
+        x: int
+        y: Default[list[int], lambda: [18]]
+
+    assert A.to_json(A(5, [7])) == dict(x=5, y=[7])
+    assert A(5, [7]) == A.from_json(dict(x=5, y=[7]))
+    assert A(5, [18]) == A.from_json(dict(x=5))

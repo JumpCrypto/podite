@@ -53,6 +53,6 @@ from .rust import Option
 
 from .builtin import register_builtins
 
-from .misc import Static
+from .misc import Static, Default
 
 register_builtins()

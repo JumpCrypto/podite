@@ -8,6 +8,8 @@ from .core import PodConverterCatalog, POD_SELF_CONVERTER
 TO_JSON = "_to_json"
 FROM_JSON = "_from_json"
 
+MISSING = object()
+
 
 class JsonPodConverter(ABC):
     @abstractmethod
@@ -79,7 +81,8 @@ class JsonPodConverterCatalog(PodConverterCatalog[JsonPodConverter]):
         def _from_json(cls, obj, **kwargs):
             values = {}
             for field in fields(cls):
-                values[field.name] = self.unpack(field.type, obj[field.name])
+                field_value = obj.get(field.name, MISSING)
+                values[field.name] = self.unpack(field.type, field_value)
             return cls(**values)
 
         helpers[TO_JSON] = _to_json
