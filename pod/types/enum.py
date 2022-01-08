@@ -12,6 +12,7 @@ from pod.decorators import (
 
 from .atomic import U8
 from .. import pod
+from .._utils import resolve_name_mapping
 
 _VALUES_TO_NAMES = "__enum_values_to_names__"
 _NAMES_TO_VARIANTS = "__enum_names_to_variants__"
@@ -238,14 +239,7 @@ class Enum(int, metaclass=EnumMeta):  # type: ignore
     @classmethod
     def _transform_name(cls, name):
         mapping = cls._get_json_tag_name_map()
-        if mapping is None:
-            return name
-        elif mapping == "lower":
-            mapping = str.lower
-        elif mapping == "upper":
-            mapping = str.upper
-        elif mapping == "capitalize":
-            mapping = str.capitalize
+        mapping = resolve_name_mapping(mapping)
 
         return mapping(name)
 

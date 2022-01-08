@@ -1,14 +1,16 @@
-from dataclasses import is_dataclass, fields
-from io import BytesIO
 from abc import ABC, abstractmethod
-from typing import Tuple, Dict, Callable, Any
+from dataclasses import is_dataclass, fields
+from typing import Dict, Callable, Any
 
+from ._utils import resolve_name_mapping
 from .core import PodConverterCatalog, POD_SELF_CONVERTER
 
 TO_JSON = "_to_json"
 FROM_JSON = "_from_json"
 
 MISSING = object()
+
+POD_OPTIONS_RENAME = "rename"
 
 
 class JsonPodConverter(ABC):
@@ -61,19 +63,25 @@ class JsonPodConverterCatalog(PodConverterCatalog[JsonPodConverter]):
         helpers["from_json"] = from_json
 
         if is_dataclass(type_):
-            helpers.update(self._generate_packers())
+            helpers.update(self._generate_packers(type_))
 
         return helpers
 
-    def _generate_packers(self) -> Dict[str, Callable]:
+    def _generate_packers(self, type_) -> Dict[str, Callable]:
         helpers: Dict[str, Callable] = {}
+
+        from .decorators import POD_OPTIONS
+
+        options = getattr(type_, POD_OPTIONS, {})
+        rename_fn = options.get(POD_OPTIONS_RENAME, lambda x: x)
+        rename_fn = resolve_name_mapping(rename_fn)
 
         @classmethod  # type: ignore[misc]
         def _to_json(cls, obj):
             values = {}
             for field in fields(cls):
                 value = getattr(obj, field.name)
-                values[field.name] = self.pack(field.type, value)
+                values[rename_fn(field.name)] = self.pack(field.type, value)
 
             return values
 
@@ -81,7 +89,7 @@ class JsonPodConverterCatalog(PodConverterCatalog[JsonPodConverter]):
         def _from_json(cls, obj, **kwargs):
             values = {}
             for field in fields(cls):
-                field_value = obj.get(field.name, MISSING)
+                field_value = obj.get(rename_fn(field.name), MISSING)
                 values[field.name] = self.unpack(field.type, field_value)
             return cls(**values)
 

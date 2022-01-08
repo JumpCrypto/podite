@@ -14,3 +14,15 @@ class _GetitemToCall:
 
     def __repr__(self):
         return str(self)
+
+
+def resolve_name_mapping(mapping):
+    if mapping is None:
+        return lambda x: x
+    elif mapping == "lower":
+        mapping = str.lower
+    elif mapping == "upper":
+        mapping = str.upper
+    elif mapping == "capitalize":
+        mapping = str.capitalize
+    return mapping

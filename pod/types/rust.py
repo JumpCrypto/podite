@@ -1,6 +1,6 @@
 from typing import Type
 
-from ._utils import _GetitemToCall
+from pod._utils import _GetitemToCall
 from .enum import Enum, Variant
 from ..decorators import pod
 

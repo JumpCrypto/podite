@@ -2,7 +2,7 @@ from .atomic import U32
 from ..bytes import _BYTES_CATALOG
 from ..json import _JSON_CATALOG
 from ..decorators import pod
-from ._utils import _GetitemToCall
+from pod._utils import _GetitemToCall
 
 
 def _fixed_len_array(name, type_, length):

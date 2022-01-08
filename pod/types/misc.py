@@ -1,7 +1,7 @@
 from io import BytesIO
 from typing import Type
 
-from ._utils import _GetitemToCall
+from pod._utils import _GetitemToCall
 from ..bytes import _BYTES_CATALOG
 from ..json import _JSON_CATALOG, MISSING
 from ..decorators import pod

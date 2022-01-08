@@ -1,4 +1,5 @@
 from pod.decorators import pod
+from pod.json import POD_OPTIONS_RENAME
 from pod.types.atomic import I8, I16, U8, I32, U128
 
 
@@ -69,3 +70,16 @@ def test_json_inheritance():
 
     assert B.to_json(b1) == dict(x=5, ay=18, by=12)
     assert b1 == B.from_json(dict(x=5, ay=18, by=12))
+
+
+def test_json_name_fields():
+    @pod
+    class A:
+        __pod_options__ = {POD_OPTIONS_RENAME: "upper"}
+        x: I8
+        y: U8
+
+    a = A(x=5, y=18)
+
+    assert A.to_json(a) == dict(X=5, Y=18)
+    assert a == A.from_json(dict(X=5, Y=18))
