@@ -2,7 +2,7 @@ from typing import Optional
 
 from pod.decorators import pod
 from pod.types.atomic import U16, U32
-from pod.types.enum import Enum, Variant, ENUM_TAG_NAME_MAP, ENUM_TAG_NAME
+from pod.types.enum import Enum, Variant, ENUM_TAG_NAME_MAP, ENUM_TAG_NAME, named_fields
 
 
 def test_bytes_enum_without_field():
@@ -68,9 +68,7 @@ def test_json_enum_with_field():
 def test_json_enum_name_mapping():
     @pod
     class A(Enum):
-        __enum_options__ = {
-            ENUM_TAG_NAME_MAP: "lower"
-        }
+        __enum_options__ = {ENUM_TAG_NAME_MAP: "lower"}
         X = None
         Y = None
         Z = None
@@ -83,24 +81,19 @@ def test_json_enum_name_mapping():
 
 
 def test_json_enum_tagged():
-    @pod
-    class A:
-        b: int
-        c: str
+    t = named_fields(b=int, c=str)
 
     @pod
     class B(Enum):
-        __enum_options__ = {
-            ENUM_TAG_NAME: "kind"
-        }
+        __enum_options__ = {ENUM_TAG_NAME: "kind"}
         X = None
         Y = None
-        Z = Variant(field=Optional[A])
+        Z = Variant(field=Optional[t])
 
     assert B.to_json(B.Y) == dict(kind="Y")
     assert B.to_json(B.Z) == dict(kind="Z")
-    assert B.to_json(B.Z(A(b=5, c=6))) == dict(kind="Z", b=5, c=6)
+    assert B.to_json(B.Z((5, 6))) == dict(kind="Z", b=5, c=6)
 
     assert B.Y == B.from_json(dict(kind="Y"))
     assert B.Z == B.from_json(dict(kind="Z"))
-    assert B.Z(A(b=5, c=6)) == B.from_json(dict(kind="Z", b=5, c=6))
+    assert B.Z(t(b=5, c=6)) == B.from_json(dict(kind="Z", b=5, c=6))

@@ -47,6 +47,7 @@ from .types import (
     Str,
     Enum,
     Variant,
+    named_fields,
     Option,
     Static,
 )

@@ -1,6 +1,6 @@
 from enum import _is_sunder, _is_dunder, _is_descriptor  # type: ignore
 from dataclasses import dataclass
-from typing import Optional, Type
+from typing import Optional, Type, NamedTuple
 
 from pod.bytes import _BYTES_CATALOG
 from pod.json import _JSON_CATALOG
@@ -11,6 +11,7 @@ from pod.decorators import (
 )
 
 from .atomic import U8
+from .. import pod
 
 _VALUES_TO_NAMES = "__enum_values_to_names__"
 _NAMES_TO_VARIANTS = "__enum_names_to_variants__"
@@ -336,3 +337,23 @@ class Enum(int, metaclass=EnumMeta):  # type: ignore
 
     def get_name(self):
         return getattr(type(self), _VALUES_TO_NAMES)[int(self)]
+
+
+def named_fields(**kwargs):
+    cls = pod(NamedTuple("Pod", kwargs.items()), dataclass_fn=dataclass(init=False))  # type: ignore
+
+    # making sure that it works when tuples are passed too
+    def safe_cast(obj):
+        if isinstance(obj, (tuple, list)):
+            return cls(*obj)
+        if isinstance(obj, dict):
+            return cls(**obj)
+        return obj
+
+    to_bytes = cls._to_bytes_partial
+    cls._to_bytes_partial = lambda buffer, obj: to_bytes(buffer, safe_cast(obj))
+
+    to_json = cls._to_json
+    cls._to_json = lambda obj: to_json(cls(*obj))
+
+    return cls

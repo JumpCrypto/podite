@@ -47,7 +47,7 @@ from .array import (
     Str,
 )
 
-from .enum import Enum, Variant
+from .enum import Enum, Variant, named_fields
 
 from .rust import Option
 
