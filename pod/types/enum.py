@@ -193,13 +193,7 @@ class Enum(int, metaclass=EnumMeta):  # type: ignore
         )
 
     def __eq__(self, other):
-        if int(self) != int(other):
-            return False
-
-        if not type(self) == type(other):
-            return False
-
-        return self.field == other.field
+        return type(self) == type(other) and int(self) == int(other)
 
     def __hash__(self):
         return hash((type(self), int(self), self.field))
