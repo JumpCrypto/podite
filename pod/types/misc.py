@@ -2,16 +2,14 @@ import inspect
 from io import BytesIO
 from typing import Type
 
-from pod._utils import _GetitemToCall
+from pod._utils import _GetitemToCall, get_calling_module, get_concrete_type
 from ..bytes import _BYTES_CATALOG
 from ..json import _JSON_CATALOG, MISSING
 from ..decorators import pod
 
 
 def _static(name, type_: Type, length="auto"):
-
-    if length == "auto":
-        length = _BYTES_CATALOG.calc_max_size(type_)
+    module = get_calling_module()
 
     @pod
     class _Static:  # type: ignore
@@ -21,47 +19,54 @@ def _static(name, type_: Type, length="auto"):
 
         @classmethod
         def _calc_max_size(cls):
-            return length
+            if length == "auto":
+                return _BYTES_CATALOG.calc_max_size(type_)
+            else:
+                return length
 
         @classmethod
         def _to_bytes_partial(cls, buffer, obj):
             before = buffer.tell()
-            _BYTES_CATALOG.pack_partial(type_, buffer, obj)
+            _BYTES_CATALOG.pack_partial(get_concrete_type(module, type_), buffer, obj)
             after = buffer.tell()
 
             delta = after - before
-            if delta > length:
+            max_length = cls._calc_max_size()
+            if delta > max_length:
                 raise RuntimeError(
-                    f"The underlying type has consumed {delta} bytes > length ({length})"
+                    f"The underlying type has consumed {delta} bytes > length ({max_length})"
                 )
 
-            if delta < length:
-                buffer.write(bytes(length - delta))
+            if delta < max_length:
+                buffer.write(bytes(max_length - delta))
 
         @classmethod
         def _from_bytes_partial(cls, buffer: BytesIO):
             before = buffer.tell()
-            obj = _BYTES_CATALOG.unpack_partial(type_, buffer)
+            obj = _BYTES_CATALOG.unpack_partial(
+                get_concrete_type(module, type_), buffer
+            )
             after = buffer.tell()
 
             delta = after - before
-            if delta > length:
+            max_length = cls._calc_max_size()
+            if delta > max_length:
                 raise RuntimeError(
-                    f"The underlying type has consumed {delta} bytes > length ({length})"
+                    f"The underlying type has consumed {delta} bytes > length ({max_length})"
                 )
 
-            if delta < length:
-                buffer.read(length)
+            if delta < max_length:
+                buffer.read(max_length)
 
             return obj
 
         @classmethod
         def _to_json(cls, obj):
-            return _JSON_CATALOG.pack(type_, obj)
+            return _JSON_CATALOG.pack(get_concrete_type(module, type_), obj)
 
         @classmethod
         def _from_json(cls, obj):
-            return _JSON_CATALOG.unpack(type_, obj)
+            return _JSON_CATALOG.unpack(get_concrete_type(module, type_), obj)
 
     _Static.__name__ = f"{name}[{type_}, {length}]"
     _Static.__qualname__ = _Static.__name__
@@ -73,27 +78,33 @@ Static = _GetitemToCall("Static", _static)
 
 
 def _default(name, type_: Type, default=None):
+    module = get_calling_module()
+
     @pod(override=("from_bytes", "to_bytes"), dataclass_fn=None)
     class _Default:  # type: ignore
         @classmethod
         def _is_static(cls) -> bool:
-            return _BYTES_CATALOG.is_static(type_)
+            return _BYTES_CATALOG.is_static(get_concrete_type(module, type_))
 
         @classmethod
         def _calc_max_size(cls):
-            return _BYTES_CATALOG.calc_max_size(type_)
+            return _BYTES_CATALOG.calc_max_size(get_concrete_type(module, type_))
 
         @classmethod
         def _to_bytes_partial(cls, buffer, obj):
-            return _BYTES_CATALOG.pack_partial(type_, buffer, obj)
+            return _BYTES_CATALOG.pack_partial(
+                get_concrete_type(module, type_), buffer, obj
+            )
 
         @classmethod
         def _from_bytes_partial(cls, buffer: BytesIO):
-            return _BYTES_CATALOG.unpack_partial(type_, buffer)
+            return _BYTES_CATALOG.unpack_partial(
+                get_concrete_type(module, type_), buffer
+            )
 
         @classmethod
         def _to_json(cls, obj):
-            return _JSON_CATALOG.pack(type_, obj)
+            return _JSON_CATALOG.pack(get_concrete_type(module, type_), obj)
 
         @classmethod
         def _from_json(cls, obj):
@@ -101,7 +112,7 @@ def _default(name, type_: Type, default=None):
                 if default is None:
                     return None
                 return default()
-            return _JSON_CATALOG.unpack(type_, obj)
+            return _JSON_CATALOG.unpack(get_concrete_type(module, type_), obj)
 
     _Default.__name__ = f"{name}[{type_}, {default}]"
     _Default.__qualname__ = _Default.__name__
@@ -112,12 +123,11 @@ def _default(name, type_: Type, default=None):
 Default = _GetitemToCall("Default", _default)
 
 
-def _delayed(name, type_expr):
-    frame = inspect.stack()[2]
-    module = inspect.getmodule(frame[0])
+def _forward_ref(name, type_expr):
+    module = get_calling_module()
 
     @pod(override=("from_bytes", "to_bytes"), dataclass_fn=None)
-    class _Delayed:  # type: ignore
+    class _ForwardRef:  # type: ignore
         type_ = None
 
         @classmethod
@@ -153,10 +163,10 @@ def _delayed(name, type_expr):
         def _from_json(cls, obj):
             return _JSON_CATALOG.unpack(cls.get_type(), obj)
 
-    _Delayed.__name__ = f"{name}[{type_expr}]"
-    _Delayed.__qualname__ = _Delayed.__name__
+    _ForwardRef.__name__ = f"{name}[{type_expr}]"
+    _ForwardRef.__qualname__ = _ForwardRef.__name__
 
-    return _Delayed
+    return _ForwardRef
 
 
-Delayed = _GetitemToCall("Delayed", _delayed)
+ForwardRef = _GetitemToCall("ForwardRef", _forward_ref)

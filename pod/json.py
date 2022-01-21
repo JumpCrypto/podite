@@ -98,7 +98,9 @@ class JsonPodConverterCatalog(PodConverterCatalog[JsonPodConverter]):
             values = {}
             for field in fields(cls):
                 value = getattr(obj, field.name)
-                values[rename_fn(field.name)] = self.pack(field.type, value)
+                values[rename_fn(field.name)] = self.pack(
+                    cls._get_field_type(field.type), value
+                )
 
             return values
 
@@ -107,7 +109,9 @@ class JsonPodConverterCatalog(PodConverterCatalog[JsonPodConverter]):
             values = {}
             for field in fields(cls):
                 field_value = obj.get(rename_fn(field.name), MISSING)
-                values[field.name] = self.unpack(field.type, field_value)
+                values[field.name] = self.unpack(
+                    cls._get_field_type(field.type), field_value
+                )
             return cls(**values)
 
         helpers[TO_JSON] = _to_json

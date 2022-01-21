@@ -2,13 +2,13 @@
 """
 Core functionality and base classes of pod packing/unpacking are implemented here.
 """
-from abc import ABC, abstractmethod
+import sys
 from typing import List, Dict, Callable, TypeVar, Generic, Type, Optional
-
 
 PodConverter = TypeVar("PodConverter")
 
 POD_SELF_CONVERTER = "__pod_self_converter__"
+GET_FIELD_TYPE = "_get_field_type"
 
 
 class PodConverterCatalog(Generic[PodConverter]):
@@ -72,4 +72,12 @@ class PodConverterCatalog(Generic[PodConverter]):
         return converter.unpack(type_, raw, **kwargs)
 
     def generate_helpers(self, type_) -> Dict[str, Callable]:
-        return dict()
+        @classmethod  # type: ignore[misc]
+        def _get_field_type(cls, field):
+            if isinstance(field, str):
+                module = sys.modules[cls.__module__]
+                return getattr(module, field)
+            else:
+                return field
+
+        return {GET_FIELD_TYPE: _get_field_type}

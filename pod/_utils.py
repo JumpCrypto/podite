@@ -1,3 +1,6 @@
+import inspect
+
+
 class _GetitemToCall:
     def __init__(self, name, func):
         self.name = name
@@ -26,3 +29,14 @@ def resolve_name_mapping(mapping):
     elif mapping == "capitalize":
         mapping = str.capitalize
     return mapping
+
+
+def get_calling_module(level=3):
+    frame = inspect.stack()[level]
+    return inspect.getmodule(frame[0])
+
+
+def get_concrete_type(module, type_):
+    if isinstance(type_, str):
+        return getattr(module, type_)
+    return type_
