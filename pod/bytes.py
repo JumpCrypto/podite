@@ -135,7 +135,7 @@ class BytesPodConverterCatalog(PodConverterCatalog[BytesPodConverter]):
         @classmethod  # type: ignore[misc]
         def _is_static(cls) -> bool:
             for field in fields(cls):
-                if not self.is_static(field.type):
+                if not self.is_static(cls._get_field_type(field.type)):
                     return False
             return True
 
@@ -143,7 +143,7 @@ class BytesPodConverterCatalog(PodConverterCatalog[BytesPodConverter]):
         def _calc_max_size(cls):
             total = 0
             for field in fields(cls):
-                total += self.calc_max_size(field.type)
+                total += self.calc_max_size(cls._get_field_type(field.type))
 
             return total
 
@@ -151,13 +151,15 @@ class BytesPodConverterCatalog(PodConverterCatalog[BytesPodConverter]):
         def _to_bytes_partial(cls, buffer, obj):
             for field in fields(cls):
                 value = getattr(obj, field.name)
-                self.pack_partial(field.type, buffer, value)
+                self.pack_partial(cls._get_field_type(field.type), buffer, value)
 
         @classmethod  # type: ignore[misc]
         def _from_bytes_partial(cls, buffer, **kwargs):
             values = {}
             for field in fields(cls):
-                values[field.name] = self.unpack_partial(field.type, buffer)
+                values[field.name] = self.unpack_partial(
+                    cls._get_field_type(field.type), buffer
+                )
             return cls(**values)
 
         helpers[IS_STATIC] = _is_static

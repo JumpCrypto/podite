@@ -1,6 +1,6 @@
 from enum import _is_sunder, _is_dunder, _is_descriptor  # type: ignore
 from dataclasses import dataclass
-from typing import Optional, Type, NamedTuple
+from typing import Optional, Type, NamedTuple, Tuple, Dict
 
 from pod.bytes import _BYTES_CATALOG
 from pod.json import _JSON_CATALOG
@@ -12,7 +12,7 @@ from pod.decorators import (
 
 from .atomic import U8
 from .. import pod
-from .._utils import resolve_name_mapping
+from .._utils import resolve_name_mapping, get_calling_module, get_concrete_type
 
 _VALUES_TO_NAMES = "__enum_values_to_names__"
 _NAMES_TO_VARIANTS = "__enum_names_to_variants__"
@@ -110,10 +110,21 @@ class Variant:
     prev_value: Optional[int] = None
     value: Optional[int] = None
     field: Optional[Type] = None
+    module: Optional[Tuple[Dict, Dict]] = None
 
-    def __init__(self, value=None, field=None):
+    def __init__(self, value=None, field=None, module=None):
         self.value = value
         self.field = field
+        if module is None:
+            self.module = get_calling_module()
+        else:
+            self.module = module
+
+    @property
+    def concrete_field_type(self):
+        if isinstance(self.field, str):
+            return get_concrete_type(self.module, self.field)
+        return self.field
 
     def assign_value(self):
         if self.prev_value is None:
@@ -124,12 +135,12 @@ class Variant:
     def to_bytes_partial(self, buffer, obj):
         # Notice that tag value is already serialized
         if self.field is not None:
-            _BYTES_CATALOG.pack_partial(self.field, buffer, obj.field)
+            _BYTES_CATALOG.pack_partial(self.concrete_field_type, buffer, obj.field)
 
     def from_bytes_partial(self, buffer, instance):
         # Notice is that tag value is already deserialized
         if self.field is not None:
-            field = _BYTES_CATALOG.unpack_partial(self.field, buffer)
+            field = _BYTES_CATALOG.unpack_partial(self.concrete_field_type, buffer)
             instance = instance(field)
 
         return instance
@@ -138,12 +149,12 @@ class Variant:
         if self.field is None:
             return None
 
-        return _JSON_CATALOG.pack(self.field, obj.field)
+        return _JSON_CATALOG.pack(self.concrete_field_type, obj.field)
 
     def from_json(self, instance, raw):
         # Tag name/value is encoded in raw
         if self.field is not None:
-            field = _JSON_CATALOG.unpack(self.field, raw)
+            field = _JSON_CATALOG.unpack(self.concrete_field_type, raw)
             return instance(field)
         return instance
 
@@ -218,7 +229,7 @@ class Enum(int, metaclass=EnumMeta):  # type: ignore
             if variant.field is None:
                 variant_size = 0
             else:
-                variant_size = _BYTES_CATALOG.calc_max_size(variant.field)
+                variant_size = _BYTES_CATALOG.calc_max_size(variant.concrete_field_type)
 
             max_field_size = max(max_field_size, variant_size)
 

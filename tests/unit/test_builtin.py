@@ -65,6 +65,25 @@ def test_bytes_tuple_static():
     assert catalog.unpack(type_, b"\x00\x00\x06\x00\x00") == (False, 6 * 2 ** 8)
 
 
+def test_bytes_tuple_static_forward_ref():
+    type_ = Tuple[bool, Element, U32]
+    catalog = get_catalog("bytes")
+
+    assert catalog.is_static(type_)
+    assert catalog.calc_max_size(type_) == 7
+
+    assert catalog.unpack(type_, b"\x01\x00\x01\x05\x00\x00\x00") == (
+        True,
+        Element(False, True),
+        5,
+    )
+    assert catalog.unpack(type_, b"\x00\x01\x00\x00\x06\x00\x00") == (
+        False,
+        Element(True, False),
+        6 * 2 ** 8,
+    )
+
+
 def test_json_tuple_static():
     @pod
     class A:
@@ -119,3 +138,9 @@ def test_json_bytes():
 
     assert catalog.pack(bytes, b"test") == [ord(ch) for ch in "test"]
     assert catalog.unpack(bytes, [ord(ch) for ch in "test"]) == b"test"
+
+
+@pod
+class Element:
+    a: bool
+    b: bool

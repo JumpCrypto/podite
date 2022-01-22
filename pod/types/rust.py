@@ -1,6 +1,6 @@
 from typing import Type
 
-from pod._utils import _GetitemToCall
+from pod._utils import _GetitemToCall, get_calling_module
 from .enum import Enum, Variant
 from ..decorators import pod
 
@@ -9,7 +9,7 @@ def _option(_name, type_: Type):
     @pod
     class _Option(Enum):
         NONE = Variant()
-        SOME = Variant(field=type_)
+        SOME = Variant(field=type_, module=get_calling_module(4))
 
     _Option.__name__ = f"Option[{type_}]"
     _Option.__qualname__ = _Option.__name__

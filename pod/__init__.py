@@ -51,5 +51,4 @@ from .types import (
     Option,
     Static,
     Default,
-    Delayed,
 )

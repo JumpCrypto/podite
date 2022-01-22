@@ -1,26 +1,32 @@
 from .atomic import U32
 from ..bytes import _BYTES_CATALOG
+from .._utils import _GetitemToCall, get_concrete_type, get_calling_module
 from ..json import _JSON_CATALOG
 from ..decorators import pod
-from pod._utils import _GetitemToCall
 
 
 def _fixed_len_array(name, type_, length):
+    module = get_calling_module()
+
     @pod(dataclass_fn=None)
     class _ArrayPod:
         @classmethod
         def _is_static(cls) -> bool:
-            return _BYTES_CATALOG.is_static(type_)
+            return _BYTES_CATALOG.is_static(get_concrete_type(module, type_))
 
         @classmethod
         def _calc_max_size(cls):
-            return _BYTES_CATALOG.calc_max_size(type_) * length
+            return (
+                _BYTES_CATALOG.calc_max_size(get_concrete_type(module, type_)) * length
+            )
 
         @classmethod
         def _from_bytes_partial(cls, buffer):
             result = []
             for _ in range(length):
-                value = _BYTES_CATALOG.unpack_partial(type_, buffer)
+                value = _BYTES_CATALOG.unpack_partial(
+                    get_concrete_type(module, type_), buffer
+                )
                 result.append(value)
 
             return result
@@ -28,15 +34,21 @@ def _fixed_len_array(name, type_, length):
         @classmethod
         def _to_bytes_partial(cls, obj, buffer):
             for elem in obj:
-                _BYTES_CATALOG.pack_partial(type_, buffer, elem)
+                _BYTES_CATALOG.pack_partial(
+                    get_concrete_type(module, type_), buffer, elem
+                )
 
         @classmethod
         def _to_json(cls, obj):
-            return [_JSON_CATALOG.pack(type_, e) for e in obj]
+            return [
+                _JSON_CATALOG.pack(get_concrete_type(module, type_), e) for e in obj
+            ]
 
         @classmethod
         def _from_json(cls, raw):
-            return [_JSON_CATALOG.unpack(type_, e) for e in raw]
+            return [
+                _JSON_CATALOG.unpack(get_concrete_type(module, type_), e) for e in raw
+            ]
 
     _ArrayPod.__name__ = f"{name}[{type_}, {length}]"
     _ArrayPod.__qualname__ = _ArrayPod.__name__
@@ -133,6 +145,8 @@ def _fixed_len_str(name, length, encoding="UTF-8", autopad=True):
 
 
 def _var_len_array(name, type_, max_length=None, length_type=None):
+    module = get_calling_module()
+
     if length_type is None:
         length_type = U32
 
@@ -148,7 +162,10 @@ def _var_len_array(name, type_, max_length=None, length_type=None):
         @classmethod
         def _calc_max_size(cls):
             len_size = _BYTES_CATALOG.calc_max_size(length_type)
-            body_size = _BYTES_CATALOG.calc_max_size(type_) * max_length
+            body_size = (
+                _BYTES_CATALOG.calc_max_size(get_concrete_type(module, type_))
+                * max_length
+            )
             return len_size + body_size
 
         @classmethod
@@ -159,7 +176,9 @@ def _var_len_array(name, type_, max_length=None, length_type=None):
 
             result = []
             for _ in range(length):
-                value = _BYTES_CATALOG.unpack_partial(type_, buffer)
+                value = _BYTES_CATALOG.unpack_partial(
+                    get_concrete_type(module, type_), buffer
+                )
                 result.append(value)
 
             return result
@@ -171,15 +190,21 @@ def _var_len_array(name, type_, max_length=None, length_type=None):
 
             _BYTES_CATALOG.pack_partial(length_type, buffer, len(obj))
             for elem in obj:
-                _BYTES_CATALOG.pack_partial(type_, buffer, elem)
+                _BYTES_CATALOG.pack_partial(
+                    get_concrete_type(module, type_), buffer, elem
+                )
 
         @classmethod
         def _to_json(cls, obj):
-            return [_JSON_CATALOG.pack(type_, e) for e in obj]
+            return [
+                _JSON_CATALOG.pack(get_concrete_type(module, type_), e) for e in obj
+            ]
 
         @classmethod
         def _from_json(cls, raw):
-            return [_JSON_CATALOG.unpack(type_, e) for e in raw]
+            return [
+                _JSON_CATALOG.unpack(get_concrete_type(module, type_), e) for e in raw
+            ]
 
     _ArrayPod.__name__ = (
         f"{name}[{type_}, length_type={length_type}, max_length={max_length}]"

@@ -9,6 +9,7 @@ from pod import (
     U32,
     pod,
     Bool,
+    U8,
 )
 
 
@@ -130,3 +131,29 @@ def test_bytes_str():
     expect = bytes([2 * i for i in range(5)]).decode("utf-8")
 
     assert actual == expect
+
+
+def test_bytes_fix_len_array_with_forward_ref_global():
+    type_ = FixedLenArray["Element", 2]
+
+    assert type_.is_static()
+    assert type_.calc_max_size() == 2 * 5
+
+    raw = b""
+    for i in range(10):
+        raw += bytes([2 * i])
+
+    actual = type_.from_bytes(raw)
+    expect = [
+        Element(0, U32.from_bytes(bytes([2, 4, 6, 8]))),
+        Element(10, U32.from_bytes(bytes([12, 14, 16, 18, 20]))),
+    ]
+    print(actual[1], expect[1])
+
+    assert actual == expect
+
+
+@pod
+class Element:
+    a: U8
+    b: U32

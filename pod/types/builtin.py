@@ -1,6 +1,5 @@
-from typing import Optional, get_origin, Union, get_args, Any
+from typing import Optional, get_origin, Union, get_args, Any, ForwardRef
 
-from pod import get_catalog
 from pod.bytes import BytesPodConverter, _BYTES_CATALOG
 from pod.json import JsonPodConverter, _JSON_CATALOG
 
@@ -52,7 +51,10 @@ class OptionalConverter(BytesPodConverter, JsonPodConverter):
 
     @staticmethod
     def get_field_type(type_):
-        return get_args(type_)[0]
+        field_type = get_args(type_)[0]
+        if isinstance(field_type, ForwardRef):
+            raise RuntimeError("ForwardRef is not currently supported in Optional.")
+        return field_type
 
     def is_static(self, type_) -> bool:
         return False

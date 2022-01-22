@@ -1,4 +1,4 @@
-from pod import U32, Option, Static, Enum, Variant, U16, pod, Default, Delayed
+from pod import pod, U16, U32, Option, Static, Enum, Variant, Default
 
 
 def test_bytes_static_option():
@@ -17,6 +17,29 @@ def test_bytes_static_option():
     expect = option.SOME(5)
 
     assert actual == expect
+
+
+def test_bytes_static_option_forward_ref():
+    option = Option["Element"]
+    type_ = Static[option]
+
+    assert type_.is_static()
+    assert type_.calc_max_size() == 3
+
+    actual = type_.from_bytes(b"\x00\x00\x00")
+    expect = option.NONE
+
+    assert actual == expect
+
+    actual = type_.from_bytes(b"\x01\x05\x00")
+    expect = option.SOME(5)
+
+    assert actual == expect
+
+
+@pod
+class Element:
+    a: U16
 
 
 def test_bytes_static_enum():
@@ -72,8 +95,8 @@ def test_json_default():
 
 @pod
 class Container:
-    x: int
-    y: Delayed["Contained"]  # type: ignore
+    x: U32
+    y: "Contained"
 
 
 @pod
@@ -81,7 +104,7 @@ class Contained:
     z: int
 
 
-def test_json_delayed():
+def test_json_forward_ref():
     raw = dict(x=5, y=dict(z=6))
 
     actual = Container.from_json(raw)
