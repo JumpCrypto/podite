@@ -38,5 +38,6 @@ def get_calling_module(level=3):
 
 def get_concrete_type(module, type_):
     if isinstance(type_, str):
-        return getattr(module, type_)
+        module_dict = {name: getattr(module, name) for name in dir(module)}
+        return eval(type_, module_dict, dict())
     return type_
