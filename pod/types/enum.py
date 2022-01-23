@@ -36,20 +36,21 @@ class EnumMeta(type):
         ]
 
     def __new__(mcs, clsname, bases, classdict):
+        cls = super().__new__(mcs, clsname, bases, classdict)
+
         member_names = mcs.get_member_names(classdict)
+        if not member_names:
+            return cls
 
         if POD_OPTIONS in member_names:
             member_names.remove(POD_OPTIONS)
-
-        if not member_names:
-            return super().__new__(mcs, clsname, bases, classdict)
 
         for b in bases:
             if hasattr(b, _VALUES_TO_NAMES):
                 raise RuntimeError("Enum classes cannot be extended.")
 
-        classdict = dict(classdict)
         prev_value = None
+        variants = dict()
         for name in member_names:
             variant = classdict[name]
 
@@ -64,25 +65,18 @@ class EnumMeta(type):
             if variant.name is None:
                 variant.name = name
 
-            if variant.prev_value is None:
-                variant.prev_value = prev_value
-
             if variant.value is None:
-                variant.assign_value()
+                variant.assign_value(cls, prev_value)
 
             prev_value = variant.value
 
             if not isinstance(variant.value, int):
                 raise TypeError("Variant's value must be either an int or None")
 
-            classdict[name] = variant
-
-        cls = super().__new__(mcs, clsname, bases, classdict)
+            variants[name] = variant
 
         values_to_names = {}
-        names_to_variants = {}
-        for name in member_names:
-            variant = classdict[name]
+        for name, variant in variants.items():
             value = variant.value
 
             instance = cls(value, None)
@@ -92,10 +86,9 @@ class EnumMeta(type):
                 raise ValueError("Repeated value is not allowed in enums.")
 
             values_to_names[value] = name
-            names_to_variants[name] = variant
 
         setattr(cls, _VALUES_TO_NAMES, values_to_names)
-        setattr(cls, _NAMES_TO_VARIANTS, names_to_variants)
+        setattr(cls, _NAMES_TO_VARIANTS, variants)
 
         return cls
 
@@ -107,7 +100,6 @@ class EnumMeta(type):
 @dataclass(init=False)
 class Variant:
     name: Optional[str] = None
-    prev_value: Optional[int] = None
     value: Optional[int] = None
     field: Optional[Type] = None
     module: Optional[Tuple[Dict, Dict]] = None
@@ -126,11 +118,11 @@ class Variant:
             return get_concrete_type(self.module, self.field)
         return self.field
 
-    def assign_value(self):
-        if self.prev_value is None:
+    def assign_value(self, _cls, prev_value):
+        if prev_value is None:
             self.value = 0
         else:
-            self.value = self.prev_value + 1
+            self.value = prev_value + 1
 
     def to_bytes_partial(self, buffer, obj):
         # Notice that tag value is already serialized
