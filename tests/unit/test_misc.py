@@ -1,4 +1,4 @@
-from pod import pod, U16, U32, Option, Static, Enum, Variant, Default
+from pod import pod, U16, U32, Option, Static, Enum, Variant, Default, field
 
 
 def test_bytes_static_option():
@@ -86,7 +86,7 @@ def test_json_default():
     @pod
     class A:
         x: int
-        y: Default[list[int], lambda: [18]]
+        y: list[int] = field(default_factory=lambda: [18])
 
     assert A.to_json(A(5, [7])) == dict(x=5, y=[7])
     assert A(5, [7]) == A.from_json(dict(x=5, y=[7]))

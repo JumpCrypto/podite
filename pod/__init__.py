@@ -1,6 +1,6 @@
 from .core import PodConverterCatalog
 from .catalogs import get_catalog
-from .decorators import pod, pod_json, pod_bytes
+from .decorators import pod, pod_json, pod_bytes, field
 from .types import (
     Bool,
     I8l,

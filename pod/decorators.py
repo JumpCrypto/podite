@@ -2,7 +2,7 @@ import enum
 import functools
 
 from typing import Union, Iterable, Container, Callable, Dict, Literal
-from dataclasses import dataclass
+from dataclasses import dataclass, field as _field
 
 from pod import get_catalog
 from pod.core import POD_SELF_CONVERTER
@@ -82,3 +82,6 @@ def pod(
 
 pod_json = functools.partial(pod, converters=("json",))
 pod_bytes = functools.partial(pod, converters=("bytes",))
+
+# for future flexibility
+field = _field

@@ -109,9 +109,10 @@ class JsonPodConverterCatalog(PodConverterCatalog[JsonPodConverter]):
             values = {}
             for field in fields(cls):
                 field_value = obj.get(rename_fn(field.name), MISSING)
-                values[field.name] = self.unpack(
-                    cls._get_field_type(field.type), field_value
-                )
+                if field_value is not MISSING:
+                    values[field.name] = self.unpack(
+                        cls._get_field_type(field.type), field_value
+                    )
             return cls(**values)
 
         helpers[TO_JSON] = _to_json
