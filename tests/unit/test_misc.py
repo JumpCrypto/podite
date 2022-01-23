@@ -82,7 +82,7 @@ def test_json_static_enum():
     assert type_.from_json({"Z": 10}) == A.Z(10)
 
 
-def test_json_default():
+def test_json_field():
     @pod
     class A:
         x: int
@@ -91,6 +91,17 @@ def test_json_default():
     assert A.to_json(A(5, [7])) == dict(x=5, y=[7])
     assert A(5, [7]) == A.from_json(dict(x=5, y=[7]))
     assert A(5, [18]) == A.from_json(dict(x=5))
+
+
+def test_json_default():
+    @pod
+    class A:
+        x: Default[int, lambda: 18]
+        y: int
+        z: list[int] = field(default_factory=lambda: [12])
+
+    assert A.to_json(A(x=10, y=5)) == dict(x=10, y=5, z=[12])
+    assert A(18, 9, [12]) == A.from_json(dict(y=9))
 
 
 @pod

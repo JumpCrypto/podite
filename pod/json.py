@@ -1,7 +1,7 @@
 import json
 
 from abc import ABC, abstractmethod
-from dataclasses import is_dataclass, fields
+from dataclasses import is_dataclass, fields, MISSING
 from typing import Dict, Callable, Any
 
 from ._utils import resolve_name_mapping
@@ -9,8 +9,6 @@ from .core import PodConverterCatalog, POD_SELF_CONVERTER
 
 TO_JSON = "_to_json"
 FROM_JSON = "_from_json"
-
-MISSING = object()
 
 POD_OPTIONS_RENAME = "rename"
 
@@ -109,7 +107,10 @@ class JsonPodConverterCatalog(PodConverterCatalog[JsonPodConverter]):
             values = {}
             for field in fields(cls):
                 field_value = obj.get(rename_fn(field.name), MISSING)
-                if field_value is not MISSING:
+                has_default = (
+                    field.default is not MISSING or field.default_factory is not MISSING
+                )
+                if field_value is not MISSING or not has_default:
                     values[field.name] = self.unpack(
                         cls._get_field_type(field.type), field_value
                     )

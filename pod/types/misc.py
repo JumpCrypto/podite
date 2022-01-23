@@ -120,6 +120,8 @@ def _default(name, type_: Type, default=None):
     return _Default
 
 
+# This can be used when the following elements don't have defaults.
+# This is as opposed to `field` that has to come at the end.
 Default = _GetitemToCall("Default", _default)
 
 
