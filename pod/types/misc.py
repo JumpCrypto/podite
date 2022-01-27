@@ -61,11 +61,11 @@ def _static(name, type_: Type, length="auto"):
             return obj
 
         @classmethod
-        def _to_json(cls, obj):
+        def _to_dict(cls, obj):
             return _JSON_CATALOG.pack(get_concrete_type(module, type_), obj)
 
         @classmethod
-        def _from_json(cls, obj):
+        def _from_dict(cls, obj):
             return _JSON_CATALOG.unpack(get_concrete_type(module, type_), obj)
 
     _Static.__name__ = f"{name}[{type_}, {length}]"
@@ -103,11 +103,11 @@ def _default(name, type_: Type, default=None):
             )
 
         @classmethod
-        def _to_json(cls, obj):
+        def _to_dict(cls, obj):
             return _JSON_CATALOG.pack(get_concrete_type(module, type_), obj)
 
         @classmethod
-        def _from_json(cls, obj):
+        def _from_dict(cls, obj):
             if obj is MISSING:
                 if default is None:
                     return None
@@ -158,11 +158,11 @@ def _forward_ref(name, type_expr):
             return _BYTES_CATALOG.unpack_partial(cls.get_type(), buffer)
 
         @classmethod
-        def _to_json(cls, obj):
+        def _to_dict(cls, obj):
             return _JSON_CATALOG.pack(cls.get_type(), obj)
 
         @classmethod
-        def _from_json(cls, obj):
+        def _from_dict(cls, obj):
             return _JSON_CATALOG.unpack(cls.get_type(), obj)
 
     _ForwardRef.__name__ = f"{name}[{type_expr}]"

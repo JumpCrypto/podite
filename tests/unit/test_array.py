@@ -28,7 +28,7 @@ def test_bytes_fixed_len_array():
 def test_json_fixed_len_array():
     type1 = FixedLenArray[U32, 10]
 
-    actual = type1.from_json([1] * 10)
+    actual = type1.from_dict([1] * 10)
     expect = [1] * 10
 
     assert actual == expect
@@ -40,7 +40,7 @@ def test_json_fixed_len_array():
 
     type2 = FixedLenArray[A, 10]
 
-    actual = type2.from_json([dict(x=bool(i % 2), y=i) for i in range(10)])
+    actual = type2.from_dict([dict(x=bool(i % 2), y=i) for i in range(10)])
     expect = [A(bool(i % 2), i) for i in range(10)]
 
     print(actual)
@@ -62,8 +62,8 @@ def test_bytes_fixed_len_bytes():
 def test_json_fixed_len_bytes():
     type_ = FixedLenBytes[10]
 
-    assert type_.from_json(list(range(10))) == bytes(range(10))
-    assert list(range(10)) == type_.to_json(bytes(range(10)))
+    assert type_.from_dict(list(range(10))) == bytes(range(10))
+    assert list(range(10)) == type_.to_dict(bytes(range(10)))
 
 
 def test_bytes_fixed_len_str():
@@ -81,8 +81,8 @@ def test_bytes_fixed_len_str():
 def test_json_fixed_len_str():
     type_ = FixedLenStr[10]
 
-    assert type_.from_json("test") == "test"
-    assert type_.to_json("test") == "test"
+    assert type_.from_dict("test") == "test"
+    assert type_.to_dict("test") == "test"
 
 
 def test_bytes_vec():

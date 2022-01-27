@@ -137,13 +137,13 @@ class Variant:
 
         return instance
 
-    def to_json(self, obj):
+    def to_dict(self, obj):
         if self.field is None:
             return None
 
         return _JSON_CATALOG.pack(self.concrete_field_type, obj.field)
 
-    def from_json(self, instance, raw):
+    def from_dict(self, instance, raw):
         # Tag name/value is encoded in raw
         if self.field is not None:
             field = _JSON_CATALOG.unpack(self.concrete_field_type, raw)
@@ -259,9 +259,9 @@ class Enum(int, metaclass=EnumMeta):  # type: ignore
         raise ValueError(f"No member with name {name} was found in this enum.")
 
     @classmethod
-    def _to_json(cls, instance):
+    def _to_dict(cls, instance):
         variant: Variant = cls._get_variant(instance.get_name())
-        field_json = variant.to_json(instance)
+        field_json = variant.to_dict(instance)
 
         name_key = cls._get_json_tag_name_key()
         name_val = cls._transform_name(instance.get_name())
@@ -282,7 +282,7 @@ class Enum(int, metaclass=EnumMeta):  # type: ignore
             return field_json
 
     @classmethod
-    def _from_json(cls, raw):
+    def _from_dict(cls, raw):
         name_key = cls._get_json_tag_name_key()
         if name_key is None:
 
@@ -310,7 +310,7 @@ class Enum(int, metaclass=EnumMeta):  # type: ignore
         member_name = cls._inv_transform_name(transformed_name)
         instance = cls[member_name]
         variant = cls._get_variant(instance.get_name())
-        return variant.from_json(instance, field_json)
+        return variant.from_dict(instance, field_json)
 
     @classmethod
     def get_options(cls):
@@ -354,7 +354,7 @@ def named_fields(**kwargs):
     to_bytes = cls._to_bytes_partial
     cls._to_bytes_partial = lambda buffer, obj: to_bytes(buffer, safe_cast(obj))
 
-    to_json = cls._to_json
-    cls._to_json = lambda obj: to_json(cls(*obj))
+    to_dict = cls._to_dict
+    cls._to_dict = lambda obj: to_dict(cls(*obj))
 
     return cls

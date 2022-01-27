@@ -7,19 +7,19 @@ from typing import Dict, Callable, Any
 from ._utils import resolve_name_mapping
 from .core import PodConverterCatalog, POD_SELF_CONVERTER
 
-TO_JSON = "_to_json"
-FROM_JSON = "_from_json"
+TO_DICT = "_to_dict"
+FROM_DICT = "_from_dict"
 
 POD_OPTIONS_RENAME = "rename"
 
 
 class JsonPodConverter(ABC):
     @abstractmethod
-    def pack_obj(self, type_, obj, **kwargs) -> Any:
+    def pack_dict(self, type_, obj, **kwargs) -> Any:
         raise NotImplementedError
 
     @abstractmethod
-    def unpack_obj(self, type_, obj, **kwargs) -> Any:
+    def unpack_dict(self, type_, obj, **kwargs) -> Any:
         raise NotImplementedError
 
 
@@ -30,52 +30,52 @@ class SelfJsonPodConverter(JsonPodConverter):
             return self
         return None
 
-    def pack_obj(self, type_, obj, **kwargs) -> Any:
-        return getattr(type_, TO_JSON)(obj, **kwargs)
+    def pack_dict(self, type_, obj, **kwargs) -> Any:
+        return getattr(type_, TO_DICT)(obj, **kwargs)
 
-    def unpack_obj(self, type_, obj, **kwargs) -> Any:
-        return getattr(type_, FROM_JSON)(obj, **kwargs)
+    def unpack_dict(self, type_, obj, **kwargs) -> Any:
+        return getattr(type_, FROM_DICT)(obj, **kwargs)
 
 
 class JsonPodConverterCatalog(PodConverterCatalog[JsonPodConverter]):
     def pack(self, type_, obj, **kwargs):
         error_msg = "No converter was able to pack raw data"
         converter = self._get_converter_or_raise(type_, error_msg)
-        return converter.pack_obj(type_, obj, **kwargs)
+        return converter.pack_dict(type_, obj, **kwargs)
 
     def unpack(self, type_, raw, **kwargs) -> object:
         error_msg = "No converter was able to unpack object"
         converter = self._get_converter_or_raise(type_, error_msg)
-        return converter.unpack_obj(type_, raw, **kwargs)
+        return converter.unpack_dict(type_, raw, **kwargs)
 
     def generate_helpers(self, type_) -> Dict[str, Callable]:
         helpers = super().generate_helpers(type_)
 
         @classmethod  # type: ignore[misc]
-        def to_json(cls, obj, **kwargs):
+        def to_dict(cls, obj, **kwargs):
             return cls.pack(obj, converter="json", **kwargs)
 
         @classmethod  # type: ignore[misc]
-        def to_json_file(cls, filename, obj, /, mode="w", **kwargs):
+        def to_dict_file(cls, filename, obj, /, mode="w", **kwargs):
             with open(filename, mode) as fin:
-                obj = cls.to_json(obj, **kwargs)
+                obj = cls.to_dict(obj, **kwargs)
                 print(obj, file=fin)
 
         @classmethod  # type: ignore[misc]
-        def from_json(cls, raw, **kwargs):
+        def from_dict(cls, raw, **kwargs):
             return cls.unpack(raw, converter="json", **kwargs)
 
         @classmethod  # type: ignore[misc]
-        def from_json_file(cls, filename, /, **kwargs):
+        def from_dict_file(cls, filename, /, **kwargs):
             with open(filename, "r") as fin:
                 raw = json.load(fin)
-                return cls.from_json(raw, **kwargs)
+                return cls.from_dict(raw, **kwargs)
 
-        helpers["to_json"] = to_json
-        helpers["to_json_file"] = to_json_file
+        helpers["to_dict"] = to_dict
+        helpers["to_dict_file"] = to_dict_file
 
-        helpers["from_json"] = from_json
-        helpers["from_json_file"] = from_json_file
+        helpers["from_dict"] = from_dict
+        helpers["from_dict_file"] = from_dict_file
 
         if is_dataclass(type_):
             helpers.update(self._generate_packers(type_))
@@ -92,7 +92,7 @@ class JsonPodConverterCatalog(PodConverterCatalog[JsonPodConverter]):
         rename_fn = resolve_name_mapping(rename_fn)
 
         @classmethod  # type: ignore[misc]
-        def _to_json(cls, obj):
+        def _to_dict(cls, obj):
             values = {}
             for field in fields(cls):
                 value = getattr(obj, field.name)
@@ -103,7 +103,7 @@ class JsonPodConverterCatalog(PodConverterCatalog[JsonPodConverter]):
             return values
 
         @classmethod  # type: ignore[misc]
-        def _from_json(cls, obj, **kwargs):
+        def _from_dict(cls, obj, **kwargs):
             values = {}
             for field in fields(cls):
                 field_value = obj.get(rename_fn(field.name), MISSING)
@@ -116,8 +116,8 @@ class JsonPodConverterCatalog(PodConverterCatalog[JsonPodConverter]):
                     )
             return cls(**values)
 
-        helpers[TO_JSON] = _to_json
-        helpers[FROM_JSON] = _from_json
+        helpers[TO_DICT] = _to_dict
+        helpers[FROM_DICT] = _from_dict
 
         return helpers
 

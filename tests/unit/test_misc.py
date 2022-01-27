@@ -72,14 +72,14 @@ def test_json_static_enum():
 
     type_ = Static[A]
 
-    assert type_.to_json(A.X) == "X"
-    assert type_.from_json("X") == A.X
+    assert type_.to_dict(A.X) == "X"
+    assert type_.from_dict("X") == A.X
 
-    assert type_.to_json(A.Y) == {"Y": None}
-    assert type_.from_json("Y") == A.Y
+    assert type_.to_dict(A.Y) == {"Y": None}
+    assert type_.from_dict("Y") == A.Y
 
-    assert type_.to_json(A.Z(10)) == {"Z": 10}
-    assert type_.from_json({"Z": 10}) == A.Z(10)
+    assert type_.to_dict(A.Z(10)) == {"Z": 10}
+    assert type_.from_dict({"Z": 10}) == A.Z(10)
 
 
 def test_json_field():
@@ -88,9 +88,9 @@ def test_json_field():
         x: int
         y: list[int] = field(default_factory=lambda: [18])
 
-    assert A.to_json(A(5, [7])) == dict(x=5, y=[7])
-    assert A(5, [7]) == A.from_json(dict(x=5, y=[7]))
-    assert A(5, [18]) == A.from_json(dict(x=5))
+    assert A.to_dict(A(5, [7])) == dict(x=5, y=[7])
+    assert A(5, [7]) == A.from_dict(dict(x=5, y=[7]))
+    assert A(5, [18]) == A.from_dict(dict(x=5))
 
 
 def test_json_default():
@@ -100,8 +100,8 @@ def test_json_default():
         y: int
         z: list[int] = field(default_factory=lambda: [12])
 
-    assert A.to_json(A(x=10, y=5)) == dict(x=10, y=5, z=[12])
-    assert A(18, 9, [12]) == A.from_json(dict(y=9))
+    assert A.to_dict(A(x=10, y=5)) == dict(x=10, y=5, z=[12])
+    assert A(18, 9, [12]) == A.from_dict(dict(y=9))
 
 
 @pod
@@ -118,7 +118,7 @@ class Contained:
 def test_json_forward_ref():
     raw = dict(x=5, y=dict(z=6))
 
-    actual = Container.from_json(raw)
+    actual = Container.from_dict(raw)
     expect = Container(5, Contained(6))
 
     assert actual == expect

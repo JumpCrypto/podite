@@ -29,8 +29,8 @@ def test_json_simple():
         z: U128
 
     a = A(x=5, y=18, z=12)
-    assert A.to_json(a) == dict(x=5, y=18, z=12)
-    assert a == A.from_json(dict(x=5, y=18, z=12))
+    assert A.to_dict(a) == dict(x=5, y=18, z=12)
+    assert a == A.from_dict(dict(x=5, y=18, z=12))
 
 
 def test_bytes_inheritance():
@@ -68,8 +68,8 @@ def test_json_inheritance():
 
     b1 = B(x=5, ay=18, by=12)
 
-    assert B.to_json(b1) == dict(x=5, ay=18, by=12)
-    assert b1 == B.from_json(dict(x=5, ay=18, by=12))
+    assert B.to_dict(b1) == dict(x=5, ay=18, by=12)
+    assert b1 == B.from_dict(dict(x=5, ay=18, by=12))
 
 
 def test_json_name_fields():
@@ -81,5 +81,5 @@ def test_json_name_fields():
 
     a = A(x=5, y=18)
 
-    assert A.to_json(a) == dict(X=5, Y=18)
-    assert a == A.from_json(dict(X=5, Y=18))
+    assert A.to_dict(a) == dict(X=5, Y=18)
+    assert a == A.from_dict(dict(X=5, Y=18))

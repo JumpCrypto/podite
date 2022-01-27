@@ -30,10 +30,10 @@ class BoolConverter(BytesPodConverter, JsonPodConverter):
 
         return b == b"\x01"
 
-    def pack_obj(self, type_, obj, **kwargs) -> Any:
+    def pack_dict(self, type_, obj, **kwargs) -> Any:
         return obj
 
-    def unpack_obj(self, type_, obj, **kwargs) -> Any:
+    def unpack_dict(self, type_, obj, **kwargs) -> Any:
         return obj
 
 
@@ -86,12 +86,12 @@ class OptionalConverter(BytesPodConverter, JsonPodConverter):
         field_type = self.get_field_type(type_)
         return _BYTES_CATALOG.unpack_partial(field_type, buffer)
 
-    def pack_obj(self, type_, obj, **kwargs) -> Any:
+    def pack_dict(self, type_, obj, **kwargs) -> Any:
         if obj is None:
             return None
         return _JSON_CATALOG.pack(self.get_field_type(type_), obj)
 
-    def unpack_obj(self, type_, obj, **kwargs) -> Any:
+    def unpack_dict(self, type_, obj, **kwargs) -> Any:
         if obj is None:
             return None
         return _JSON_CATALOG.unpack(self.get_field_type(type_), obj)
@@ -137,7 +137,7 @@ class TupleConverter(BytesPodConverter, JsonPodConverter):
             _BYTES_CATALOG.unpack_partial(t, buffer, **kwargs) for t in fields_types
         )
 
-    def pack_obj(self, type_, obj, **kwargs) -> Any:
+    def pack_dict(self, type_, obj, **kwargs) -> Any:
         fields_types = get_args(type_)
         if not isinstance(obj, tuple):
             raise ValueError(f"Expected a tuple, but received a {type(obj)}")
@@ -147,7 +147,7 @@ class TupleConverter(BytesPodConverter, JsonPodConverter):
 
         return tuple(_JSON_CATALOG.pack(t, e) for e, t in zip(obj, fields_types))
 
-    def unpack_obj(self, type_, obj, **kwargs) -> Any:
+    def unpack_dict(self, type_, obj, **kwargs) -> Any:
         fields_types = get_args(type_)
         if len(fields_types) != len(obj):
             raise ValueError(f"Tuple should have exactly {len(fields_types)} elements")
@@ -164,10 +164,10 @@ class JsonIdentityPodConverter(JsonPodConverter):
 
         return None
 
-    def pack_obj(self, type_, obj, **kwargs) -> Any:
+    def pack_dict(self, type_, obj, **kwargs) -> Any:
         return obj
 
-    def unpack_obj(self, type_, obj, **kwargs) -> Any:
+    def unpack_dict(self, type_, obj, **kwargs) -> Any:
         return obj
 
 
@@ -178,10 +178,10 @@ class JsonBytesPodConverter(JsonPodConverter):
 
         return None
 
-    def pack_obj(self, type_, obj, **kwargs) -> Any:
+    def pack_dict(self, type_, obj, **kwargs) -> Any:
         return list(obj)
 
-    def unpack_obj(self, type_, obj, **kwargs) -> Any:
+    def unpack_dict(self, type_, obj, **kwargs) -> Any:
         return bytes(obj)
 
 
@@ -196,11 +196,11 @@ class JsonListConverter(JsonPodConverter):
     def get_field_type(type_):
         return get_args(type_)[0]
 
-    def pack_obj(self, type_, obj, **kwargs) -> Any:
+    def pack_dict(self, type_, obj, **kwargs) -> Any:
         field_type = self.get_field_type(type_)
         return [_JSON_CATALOG.pack(field_type, e) for e in obj]
 
-    def unpack_obj(self, type_, obj, **kwargs) -> Any:
+    def unpack_dict(self, type_, obj, **kwargs) -> Any:
         field_type = self.get_field_type(type_)
         return [_JSON_CATALOG.unpack(field_type, e) for e in obj]
 

@@ -26,8 +26,8 @@ def test_json_enum_without_field():
         Y = None
         Z = None
 
-    assert A.to_json(A.Y) == "Y"
-    assert A.to_json(A.Z) == "Z"
+    assert A.to_dict(A.Y) == "Y"
+    assert A.to_dict(A.Z) == "Z"
 
 
 def test_bytes_enum_with_field():
@@ -56,13 +56,13 @@ def test_json_enum_with_field():
         Y = Variant(field=U32)
         Z = Variant(8, field=U16)
 
-    assert A.to_json(A.X) == "X"
-    assert A.to_json(A.Y(5)) == {"Y": 5}
-    assert A.to_json(A.Z(7)) == {"Z": 7}
+    assert A.to_dict(A.X) == "X"
+    assert A.to_dict(A.Y(5)) == {"Y": 5}
+    assert A.to_dict(A.Z(7)) == {"Z": 7}
 
-    assert A.X == A.from_json("X")
-    assert A.Y(5) == A.from_json({"Y": 5})
-    assert A.Z(7) == A.from_json({"Z": 7})
+    assert A.X == A.from_dict("X")
+    assert A.Y(5) == A.from_dict({"Y": 5})
+    assert A.Z(7) == A.from_dict({"Z": 7})
 
 
 def test_json_enum_name_mapping():
@@ -73,11 +73,11 @@ def test_json_enum_name_mapping():
         Y = None
         Z = None
 
-    assert A.to_json(A.Y) == "y"
-    assert A.to_json(A.Z) == "z"
+    assert A.to_dict(A.Y) == "y"
+    assert A.to_dict(A.Z) == "z"
 
-    assert A.Y == A.from_json("y")
-    assert A.Z == A.from_json("z")
+    assert A.Y == A.from_dict("y")
+    assert A.Z == A.from_dict("z")
 
 
 def test_json_enum_tagged():
@@ -90,10 +90,10 @@ def test_json_enum_tagged():
         Y = None
         Z = Variant(field=Optional[t])
 
-    assert B.to_json(B.Y) == dict(kind="Y")
-    assert B.to_json(B.Z) == dict(kind="Z")
-    assert B.to_json(B.Z((5, 6))) == dict(kind="Z", b=5, c=6)
+    assert B.to_dict(B.Y) == dict(kind="Y")
+    assert B.to_dict(B.Z) == dict(kind="Z")
+    assert B.to_dict(B.Z((5, 6))) == dict(kind="Z", b=5, c=6)
 
-    assert B.Y == B.from_json(dict(kind="Y"))
-    assert B.Z == B.from_json(dict(kind="Z"))
-    assert B.Z(t(b=5, c=6)) == B.from_json(dict(kind="Z", b=5, c=6))
+    assert B.Y == B.from_dict(dict(kind="Y"))
+    assert B.Z == B.from_dict(dict(kind="Z"))
+    assert B.Z(t(b=5, c=6)) == B.from_dict(dict(kind="Z", b=5, c=6))

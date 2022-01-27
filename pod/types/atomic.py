@@ -37,11 +37,11 @@ def new_atomic_type(name: str, base: type, code: str, unpacker, packer=lambda x:
             return unpacker(decoded)
 
         @classmethod
-        def _to_json(cls, obj):
+        def _to_dict(cls, obj):
             return obj
 
         @classmethod
-        def _from_json(cls, obj):
+        def _from_dict(cls, obj):
             return obj
 
     Atom.__name__ = name

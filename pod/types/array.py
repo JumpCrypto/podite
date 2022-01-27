@@ -39,13 +39,13 @@ def _fixed_len_array(name, type_, length):
                 )
 
         @classmethod
-        def _to_json(cls, obj):
+        def _to_dict(cls, obj):
             return [
                 _JSON_CATALOG.pack(get_concrete_type(module, type_), e) for e in obj
             ]
 
         @classmethod
-        def _from_json(cls, raw):
+        def _from_dict(cls, raw):
             return [
                 _JSON_CATALOG.unpack(get_concrete_type(module, type_), e) for e in raw
             ]
@@ -76,19 +76,19 @@ def _fixed_len_bytes(name, length):
             buffer.write(obj.ljust(length, b"\x00"))
 
         @classmethod
-        def _to_json(cls, obj):
+        def _to_dict(cls, obj):
             return list(obj)
 
         @classmethod
-        def _from_json(cls, raw):
+        def _from_dict(cls, raw):
             return bytes(raw)
 
         @classmethod
-        def _to_json(cls, obj):
+        def _to_dict(cls, obj):
             return list(obj)
 
         @classmethod
-        def _from_json(cls, raw):
+        def _from_dict(cls, raw):
             return bytes(raw)
 
     _BytesPod.__name__ = f"{name}[{length}]"
@@ -131,11 +131,11 @@ def _fixed_len_str(name, length, encoding="UTF-8", autopad=True):
             buffer.write(encoded.ljust(length, b"\x00"))
 
         @classmethod
-        def _to_json(cls, obj):
+        def _to_dict(cls, obj):
             return obj
 
         @classmethod
-        def _from_json(cls, raw):
+        def _from_dict(cls, raw):
             return raw
 
     _StrPod.__name__ = f"{name}[{length}, encoding={encoding}]"
@@ -195,13 +195,13 @@ def _var_len_array(name, type_, max_length=None, length_type=None):
                 )
 
         @classmethod
-        def _to_json(cls, obj):
+        def _to_dict(cls, obj):
             return [
                 _JSON_CATALOG.pack(get_concrete_type(module, type_), e) for e in obj
             ]
 
         @classmethod
-        def _from_json(cls, raw):
+        def _from_dict(cls, raw):
             return [
                 _JSON_CATALOG.unpack(get_concrete_type(module, type_), e) for e in raw
             ]
@@ -250,11 +250,11 @@ def _var_len_bytes(name, max_length=None, length_type=None):
             buffer.write(obj)
 
         @classmethod
-        def _to_json(cls, obj):
+        def _to_dict(cls, obj):
             return list(obj)
 
         @classmethod
-        def _from_json(cls, raw):
+        def _from_dict(cls, raw):
             return bytes(raw)
 
     _BytesPod.__name__ = f"{name}[length_type={length_type}, max_length={max_length}]"
@@ -299,11 +299,11 @@ def _var_len_str(name, max_length=None, length_type=None, encoding="UTF-8"):
             buffer.write(obj.encode(encoding))
 
         @classmethod
-        def _to_json(cls, obj):
+        def _to_dict(cls, obj):
             return obj
 
         @classmethod
-        def _from_json(cls, raw):
+        def _from_dict(cls, raw):
             return raw
 
     _StrPod.__name__ = f"{name}[max_length={max_length}, length_type={length_type}, encoding={encoding}]"

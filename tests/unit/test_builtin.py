@@ -23,8 +23,8 @@ def test_json_bool():
         x: bool
         y: U16
 
-    assert A.from_json(dict(x=True, y=5)).x is True
-    assert A.from_json(dict(x=False, y=5)).x is False
+    assert A.from_dict(dict(x=True, y=5)).x is True
+    assert A.from_dict(dict(x=False, y=5)).x is False
 
 
 def test_bytes_optional():
