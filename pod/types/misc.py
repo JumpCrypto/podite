@@ -56,7 +56,10 @@ def _static(name, type_: Type, length="auto"):
                 )
 
             if delta < max_length:
-                buffer.read(max_length)
+                required = max_length - delta
+                if len(buffer.read(required)) < required:
+                    raise RuntimeError("Bytes object was too small.")
+
 
             return obj
 
