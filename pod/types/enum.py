@@ -1,6 +1,16 @@
 from enum import _is_sunder, _is_dunder, _is_descriptor  # type: ignore
 from dataclasses import dataclass
-from typing import Optional, Type, NamedTuple, Tuple, Dict
+from typing import (
+    Optional,
+    Type,
+    NamedTuple,
+    Tuple,
+    Dict,
+    Generic,
+    TypeVar,
+    get_args,
+    get_origin,
+)
 
 from pod.bytes import _BYTES_CATALOG
 from pod.json import _JSON_CATALOG
@@ -18,7 +28,6 @@ _VALUES_TO_NAMES = "__enum_values_to_names__"
 _NAMES_TO_VARIANTS = "__enum_names_to_variants__"
 
 ENUM_OPTIONS = "__enum_options__"
-ENUM_TAG_TYPE = "tag_type"
 ENUM_TAG_NAME = "json_tag_name"
 ENUM_TAG_NAME_MAP = "json_tag_name_map"
 
@@ -26,7 +35,7 @@ ENUM_DEFAULT_TAG_NAME = None
 ENUM_DEFAULT_TAG_NAME_MAP = None
 
 
-class EnumMeta(type):
+class EnumMeta(type(Generic)):  # type: ignore
     @staticmethod
     def get_member_names(classdict):
         return [
@@ -93,6 +102,9 @@ class EnumMeta(type):
         return cls
 
     def __getitem__(self, item):
+        if self == Enum:
+            return self.__class_getitem__(item)
+
         variant = getattr(self, _NAMES_TO_VARIANTS)[item]
         return self(variant.value)
 
@@ -151,7 +163,10 @@ class Variant:
         return instance
 
 
-class Enum(int, metaclass=EnumMeta):  # type: ignore
+TagType = TypeVar("TagType")
+
+
+class Enum(int, Generic[TagType], metaclass=EnumMeta):  # type: ignore
     """
     The base class for pod enums.
 
@@ -318,7 +333,15 @@ class Enum(int, metaclass=EnumMeta):  # type: ignore
 
     @classmethod
     def get_tag_type(cls):
-        return cls.get_options().get(ENUM_TAG_TYPE, U8)
+        orig_bases = getattr(cls, "__orig_bases__")
+
+        # when Enum[...] is a superclass of cls
+        for base in orig_bases:
+            if get_origin(base) == Enum:
+                return get_args(base)[0]
+
+        # return the default tag type
+        return U8
 
     @classmethod
     def _get_json_tag_name_key(cls):

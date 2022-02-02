@@ -49,6 +49,28 @@ def test_bytes_enum_with_field():
     assert A.Z(7) == A.from_bytes(b"\x08\x07\x00")
 
 
+def test_bytes_enum_with_tag_type():
+    @pod
+    class A(Enum[U16]):
+        X = Variant(3)
+        Y = Variant()
+        Z = Variant(8, field=U16)
+
+    # import pdb
+    # pdb.set_trace()
+
+    assert not A.is_static()
+    assert A.calc_max_size() == 4
+
+    assert A.to_bytes(A.X) == b"\x03\x00"
+    assert A.to_bytes(A.Y) == b"\x04\x00"
+    assert A.to_bytes(A.Z(7)) == b"\x08\x00\x07\x00"
+
+    assert A.X == A.from_bytes(b"\x03\x00")
+    assert A.Y == A.from_bytes(b"\x04\x00")
+    assert A.Z(7) == A.from_bytes(b"\x08\x00\x07\x00")
+
+
 def test_json_enum_with_field():
     @pod
     class A(Enum):

@@ -60,7 +60,6 @@ def _static(name, type_: Type, length="auto"):
                 if len(buffer.read(required)) < required:
                     raise RuntimeError("Bytes object was too small.")
 
-
             return obj
 
         @classmethod
