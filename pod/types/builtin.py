@@ -1,7 +1,7 @@
 from typing import Optional, get_origin, Union, get_args, Any, ForwardRef
 
-from pod.bytes import BytesPodConverter, _BYTES_CATALOG
-from pod.json import JsonPodConverter, _JSON_CATALOG
+from pod.bytes import BytesPodConverter, BYTES_CATALOG
+from pod.json import JsonPodConverter, JSON_CATALOG
 
 
 class BoolConverter(BytesPodConverter, JsonPodConverter):
@@ -61,7 +61,7 @@ class OptionalConverter(BytesPodConverter, JsonPodConverter):
 
     def calc_max_size(self, type_) -> int:
         field_type = self.get_field_type(type_)
-        return 1 + _BYTES_CATALOG.calc_max_size(field_type)
+        return 1 + BYTES_CATALOG.calc_max_size(field_type)
 
     def pack_partial(self, type_, buffer, obj, **kwargs):
         if obj is None:
@@ -70,7 +70,7 @@ class OptionalConverter(BytesPodConverter, JsonPodConverter):
             buffer.write(b"\x01")
 
             field_type = self.get_field_type(type_)
-            _BYTES_CATALOG.pack_partial(field_type, buffer, obj)
+            BYTES_CATALOG.pack_partial(field_type, buffer, obj)
 
     def unpack_partial(self, type_, buffer, **kwargs):
         b = buffer.read(1)
@@ -84,17 +84,17 @@ class OptionalConverter(BytesPodConverter, JsonPodConverter):
             return None
 
         field_type = self.get_field_type(type_)
-        return _BYTES_CATALOG.unpack_partial(field_type, buffer)
+        return BYTES_CATALOG.unpack_partial(field_type, buffer)
 
     def pack_dict(self, type_, obj, **kwargs) -> Any:
         if obj is None:
             return None
-        return _JSON_CATALOG.pack(self.get_field_type(type_), obj)
+        return JSON_CATALOG.pack(self.get_field_type(type_), obj)
 
     def unpack_dict(self, type_, obj, **kwargs) -> Any:
         if obj is None:
             return None
-        return _JSON_CATALOG.unpack(self.get_field_type(type_), obj)
+        return JSON_CATALOG.unpack(self.get_field_type(type_), obj)
 
 
 class TupleConverter(BytesPodConverter, JsonPodConverter):
@@ -105,14 +105,14 @@ class TupleConverter(BytesPodConverter, JsonPodConverter):
         return None
 
     def is_static(self, type_) -> bool:
-        catalog = _BYTES_CATALOG
+        catalog = BYTES_CATALOG
         for arg in get_args(type_):
             if not catalog.is_static(arg):
                 return False
         return True
 
     def calc_max_size(self, type_) -> int:
-        catalog = _BYTES_CATALOG
+        catalog = BYTES_CATALOG
 
         total = 0
         for arg in get_args(type_):
@@ -129,12 +129,12 @@ class TupleConverter(BytesPodConverter, JsonPodConverter):
             raise ValueError(f"Tuple should have exactly {len(fields_types)} elements")
 
         for e, t in zip(obj, fields_types):
-            _BYTES_CATALOG.pack_partial(t, buffer, e)
+            BYTES_CATALOG.pack_partial(t, buffer, e)
 
     def unpack_partial(self, type_, buffer, **kwargs):
         fields_types = get_args(type_)
         return tuple(
-            _BYTES_CATALOG.unpack_partial(t, buffer, **kwargs) for t in fields_types
+            BYTES_CATALOG.unpack_partial(t, buffer, **kwargs) for t in fields_types
         )
 
     def pack_dict(self, type_, obj, **kwargs) -> Any:
@@ -145,7 +145,7 @@ class TupleConverter(BytesPodConverter, JsonPodConverter):
         if len(obj) != len(fields_types):
             raise ValueError(f"Tuple should have exactly {len(fields_types)} elements")
 
-        return tuple(_JSON_CATALOG.pack(t, e) for e, t in zip(obj, fields_types))
+        return tuple(JSON_CATALOG.pack(t, e) for e, t in zip(obj, fields_types))
 
     def unpack_dict(self, type_, obj, **kwargs) -> Any:
         fields_types = get_args(type_)
@@ -153,7 +153,7 @@ class TupleConverter(BytesPodConverter, JsonPodConverter):
             raise ValueError(f"Tuple should have exactly {len(fields_types)} elements")
 
         return tuple(
-            _JSON_CATALOG.unpack(t, e, **kwargs) for t, e in zip(fields_types, obj)
+            JSON_CATALOG.unpack(t, e, **kwargs) for t, e in zip(fields_types, obj)
         )
 
 
@@ -198,21 +198,21 @@ class JsonListConverter(JsonPodConverter):
 
     def pack_dict(self, type_, obj, **kwargs) -> Any:
         field_type = self.get_field_type(type_)
-        return [_JSON_CATALOG.pack(field_type, e) for e in obj]
+        return [JSON_CATALOG.pack(field_type, e) for e in obj]
 
     def unpack_dict(self, type_, obj, **kwargs) -> Any:
         field_type = self.get_field_type(type_)
-        return [_JSON_CATALOG.unpack(field_type, e) for e in obj]
+        return [JSON_CATALOG.unpack(field_type, e) for e in obj]
 
 
 def register_builtins():
-    _BYTES_CATALOG.register(BoolConverter().get_mapping)
-    _BYTES_CATALOG.register(OptionalConverter().get_mapping)
-    _BYTES_CATALOG.register(TupleConverter().get_mapping)
+    BYTES_CATALOG.register(BoolConverter().get_mapping)
+    BYTES_CATALOG.register(OptionalConverter().get_mapping)
+    BYTES_CATALOG.register(TupleConverter().get_mapping)
 
-    _JSON_CATALOG.register(BoolConverter().get_mapping)
-    _JSON_CATALOG.register(OptionalConverter().get_mapping)
-    _JSON_CATALOG.register(TupleConverter().get_mapping)
-    _JSON_CATALOG.register(JsonIdentityPodConverter().get_mapping)
-    _JSON_CATALOG.register(JsonBytesPodConverter().get_mapping)
-    _JSON_CATALOG.register(JsonListConverter().get_mapping)
+    JSON_CATALOG.register(BoolConverter().get_mapping)
+    JSON_CATALOG.register(OptionalConverter().get_mapping)
+    JSON_CATALOG.register(TupleConverter().get_mapping)
+    JSON_CATALOG.register(JsonIdentityPodConverter().get_mapping)
+    JSON_CATALOG.register(JsonBytesPodConverter().get_mapping)
+    JSON_CATALOG.register(JsonListConverter().get_mapping)

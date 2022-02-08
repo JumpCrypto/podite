@@ -1,7 +1,7 @@
 from .atomic import U32
-from ..bytes import _BYTES_CATALOG
+from ..bytes import BYTES_CATALOG
 from .._utils import _GetitemToCall, get_concrete_type, get_calling_module
-from ..json import _JSON_CATALOG
+from ..json import JSON_CATALOG
 from ..decorators import pod
 
 
@@ -12,19 +12,19 @@ def _fixed_len_array(name, type_, length):
     class _ArrayPod:
         @classmethod
         def _is_static(cls) -> bool:
-            return _BYTES_CATALOG.is_static(get_concrete_type(module, type_))
+            return BYTES_CATALOG.is_static(get_concrete_type(module, type_))
 
         @classmethod
         def _calc_max_size(cls):
             return (
-                _BYTES_CATALOG.calc_max_size(get_concrete_type(module, type_)) * length
+                    BYTES_CATALOG.calc_max_size(get_concrete_type(module, type_)) * length
             )
 
         @classmethod
         def _from_bytes_partial(cls, buffer):
             result = []
             for _ in range(length):
-                value = _BYTES_CATALOG.unpack_partial(
+                value = BYTES_CATALOG.unpack_partial(
                     get_concrete_type(module, type_), buffer
                 )
                 result.append(value)
@@ -34,20 +34,20 @@ def _fixed_len_array(name, type_, length):
         @classmethod
         def _to_bytes_partial(cls, obj, buffer):
             for elem in obj:
-                _BYTES_CATALOG.pack_partial(
+                BYTES_CATALOG.pack_partial(
                     get_concrete_type(module, type_), buffer, elem
                 )
 
         @classmethod
         def _to_dict(cls, obj):
             return [
-                _JSON_CATALOG.pack(get_concrete_type(module, type_), e) for e in obj
+                JSON_CATALOG.pack(get_concrete_type(module, type_), e) for e in obj
             ]
 
         @classmethod
         def _from_dict(cls, raw):
             return [
-                _JSON_CATALOG.unpack(get_concrete_type(module, type_), e) for e in raw
+                JSON_CATALOG.unpack(get_concrete_type(module, type_), e) for e in raw
             ]
 
     _ArrayPod.__name__ = f"{name}[{type_}, {length}]"
@@ -151,7 +151,7 @@ def _var_len_array(name, type_, max_length=None, length_type=None):
         length_type = U32
 
     if max_length is None:
-        max_length = 2 ** _BYTES_CATALOG.calc_max_size(length_type)
+        max_length = 2 ** BYTES_CATALOG.calc_max_size(length_type)
 
     @pod(dataclass_fn=None)
     class _ArrayPod:
@@ -161,22 +161,22 @@ def _var_len_array(name, type_, max_length=None, length_type=None):
 
         @classmethod
         def _calc_max_size(cls):
-            len_size = _BYTES_CATALOG.calc_max_size(length_type)
+            len_size = BYTES_CATALOG.calc_max_size(length_type)
             body_size = (
-                _BYTES_CATALOG.calc_max_size(get_concrete_type(module, type_))
-                * max_length
+                    BYTES_CATALOG.calc_max_size(get_concrete_type(module, type_))
+                    * max_length
             )
             return len_size + body_size
 
         @classmethod
         def _from_bytes_partial(cls, buffer):
-            length = _BYTES_CATALOG.unpack_partial(length_type, buffer)
+            length = BYTES_CATALOG.unpack_partial(length_type, buffer)
             if length > max_length:
                 raise RuntimeError("actual_length > max_length")
 
             result = []
             for _ in range(length):
-                value = _BYTES_CATALOG.unpack_partial(
+                value = BYTES_CATALOG.unpack_partial(
                     get_concrete_type(module, type_), buffer
                 )
                 result.append(value)
@@ -188,22 +188,22 @@ def _var_len_array(name, type_, max_length=None, length_type=None):
             if len(obj) > max_length:
                 raise RuntimeError("actual_length > max_length")
 
-            _BYTES_CATALOG.pack_partial(length_type, buffer, len(obj))
+            BYTES_CATALOG.pack_partial(length_type, buffer, len(obj))
             for elem in obj:
-                _BYTES_CATALOG.pack_partial(
+                BYTES_CATALOG.pack_partial(
                     get_concrete_type(module, type_), buffer, elem
                 )
 
         @classmethod
         def _to_dict(cls, obj):
             return [
-                _JSON_CATALOG.pack(get_concrete_type(module, type_), e) for e in obj
+                JSON_CATALOG.pack(get_concrete_type(module, type_), e) for e in obj
             ]
 
         @classmethod
         def _from_dict(cls, raw):
             return [
-                _JSON_CATALOG.unpack(get_concrete_type(module, type_), e) for e in raw
+                JSON_CATALOG.unpack(get_concrete_type(module, type_), e) for e in raw
             ]
 
     _ArrayPod.__name__ = (
@@ -219,7 +219,7 @@ def _var_len_bytes(name, max_length=None, length_type=None):
         length_type = U32
 
     if max_length is None:
-        max_length = 2 ** _BYTES_CATALOG.calc_max_size(length_type)
+        max_length = 2 ** BYTES_CATALOG.calc_max_size(length_type)
 
     @pod(dataclass_fn=None)
     class _BytesPod:
@@ -229,13 +229,13 @@ def _var_len_bytes(name, max_length=None, length_type=None):
 
         @classmethod
         def _calc_max_size(cls):
-            len_size = _BYTES_CATALOG.calc_max_size(length_type)
+            len_size = BYTES_CATALOG.calc_max_size(length_type)
             body_size = max_length
             return len_size + body_size
 
         @classmethod
         def _from_bytes_partial(cls, buffer):
-            length = _BYTES_CATALOG.unpack_partial(length_type, buffer)
+            length = BYTES_CATALOG.unpack_partial(length_type, buffer)
             if length > max_length:
                 raise RuntimeError("actual_length > max_length")
 
@@ -246,7 +246,7 @@ def _var_len_bytes(name, max_length=None, length_type=None):
             if len(obj) > max_length:
                 raise RuntimeError("actual_length > max_length")
 
-            _BYTES_CATALOG.pack_partial(length_type, buffer, len(obj))
+            BYTES_CATALOG.pack_partial(length_type, buffer, len(obj))
             buffer.write(obj)
 
         @classmethod
@@ -268,7 +268,7 @@ def _var_len_str(name, max_length=None, length_type=None, encoding="UTF-8"):
         length_type = U32
 
     if max_length is None:
-        max_length = 2 ** _BYTES_CATALOG.calc_max_size(length_type)
+        max_length = 2 ** BYTES_CATALOG.calc_max_size(length_type)
 
     @pod(dataclass_fn=None)
     class _StrPod:
@@ -278,13 +278,13 @@ def _var_len_str(name, max_length=None, length_type=None, encoding="UTF-8"):
 
         @classmethod
         def _calc_max_size(cls):
-            len_size = _BYTES_CATALOG.calc_max_size(length_type)
+            len_size = BYTES_CATALOG.calc_max_size(length_type)
             body_size = max_length
             return len_size + body_size
 
         @classmethod
         def _from_bytes_partial(cls, buffer):
-            length = _BYTES_CATALOG.unpack_partial(length_type, buffer)
+            length = BYTES_CATALOG.unpack_partial(length_type, buffer)
             if length > max_length:
                 raise RuntimeError("actual_length > max_length")
 
@@ -295,7 +295,7 @@ def _var_len_str(name, max_length=None, length_type=None, encoding="UTF-8"):
             if len(obj) > max_length:
                 raise RuntimeError("actual_length > max_length")
 
-            _BYTES_CATALOG.pack_partial(length_type, buffer, len(obj))
+            BYTES_CATALOG.pack_partial(length_type, buffer, len(obj))
             buffer.write(obj.encode(encoding))
 
         @classmethod

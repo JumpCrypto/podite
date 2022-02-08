@@ -114,5 +114,5 @@ class JsonPodConverterCatalog(PodConverterCatalog[JsonPodConverter]):
         }
 
 
-_JSON_CATALOG = JsonPodConverterCatalog()
-_JSON_CATALOG.register(SelfJsonPodConverter().get_mapping)
+JSON_CATALOG = JsonPodConverterCatalog()
+JSON_CATALOG.register(SelfJsonPodConverter().get_mapping)

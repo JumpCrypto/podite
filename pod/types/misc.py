@@ -3,8 +3,8 @@ from io import BytesIO
 from typing import Type
 
 from pod._utils import _GetitemToCall, get_calling_module, get_concrete_type
-from ..bytes import _BYTES_CATALOG
-from ..json import _JSON_CATALOG, MISSING
+from ..bytes import BYTES_CATALOG
+from ..json import JSON_CATALOG, MISSING
 from ..decorators import pod
 
 
@@ -20,14 +20,14 @@ def _static(name, type_: Type, length="auto"):
         @classmethod
         def _calc_max_size(cls):
             if length == "auto":
-                return _BYTES_CATALOG.calc_max_size(type_)
+                return BYTES_CATALOG.calc_max_size(type_)
             else:
                 return length
 
         @classmethod
         def _to_bytes_partial(cls, buffer, obj):
             before = buffer.tell()
-            _BYTES_CATALOG.pack_partial(get_concrete_type(module, type_), buffer, obj)
+            BYTES_CATALOG.pack_partial(get_concrete_type(module, type_), buffer, obj)
             after = buffer.tell()
 
             delta = after - before
@@ -43,7 +43,7 @@ def _static(name, type_: Type, length="auto"):
         @classmethod
         def _from_bytes_partial(cls, buffer: BytesIO):
             before = buffer.tell()
-            obj = _BYTES_CATALOG.unpack_partial(
+            obj = BYTES_CATALOG.unpack_partial(
                 get_concrete_type(module, type_), buffer
             )
             after = buffer.tell()
@@ -64,11 +64,11 @@ def _static(name, type_: Type, length="auto"):
 
         @classmethod
         def _to_dict(cls, obj):
-            return _JSON_CATALOG.pack(get_concrete_type(module, type_), obj)
+            return JSON_CATALOG.pack(get_concrete_type(module, type_), obj)
 
         @classmethod
         def _from_dict(cls, obj):
-            return _JSON_CATALOG.unpack(get_concrete_type(module, type_), obj)
+            return JSON_CATALOG.unpack(get_concrete_type(module, type_), obj)
 
     _Static.__name__ = f"{name}[{type_}, {length}]"
     _Static.__qualname__ = _Static.__name__
@@ -86,27 +86,27 @@ def _default(name, type_: Type, default=None):
     class _Default:  # type: ignore
         @classmethod
         def _is_static(cls) -> bool:
-            return _BYTES_CATALOG.is_static(get_concrete_type(module, type_))
+            return BYTES_CATALOG.is_static(get_concrete_type(module, type_))
 
         @classmethod
         def _calc_max_size(cls):
-            return _BYTES_CATALOG.calc_max_size(get_concrete_type(module, type_))
+            return BYTES_CATALOG.calc_max_size(get_concrete_type(module, type_))
 
         @classmethod
         def _to_bytes_partial(cls, buffer, obj):
-            return _BYTES_CATALOG.pack_partial(
+            return BYTES_CATALOG.pack_partial(
                 get_concrete_type(module, type_), buffer, obj
             )
 
         @classmethod
         def _from_bytes_partial(cls, buffer: BytesIO):
-            return _BYTES_CATALOG.unpack_partial(
+            return BYTES_CATALOG.unpack_partial(
                 get_concrete_type(module, type_), buffer
             )
 
         @classmethod
         def _to_dict(cls, obj):
-            return _JSON_CATALOG.pack(get_concrete_type(module, type_), obj)
+            return JSON_CATALOG.pack(get_concrete_type(module, type_), obj)
 
         @classmethod
         def _from_dict(cls, obj):
@@ -114,7 +114,7 @@ def _default(name, type_: Type, default=None):
                 if default is None:
                     return None
                 return default()
-            return _JSON_CATALOG.unpack(get_concrete_type(module, type_), obj)
+            return JSON_CATALOG.unpack(get_concrete_type(module, type_), obj)
 
     _Default.__name__ = f"{name}[{type_}, {default}]"
     _Default.__qualname__ = _Default.__name__
@@ -145,27 +145,27 @@ def _forward_ref(name, type_expr):
 
         @classmethod
         def _is_static(cls) -> bool:
-            return _BYTES_CATALOG.is_static(cls.get_type())
+            return BYTES_CATALOG.is_static(cls.get_type())
 
         @classmethod
         def _calc_max_size(cls):
-            return _BYTES_CATALOG.calc_max_size(cls.get_type())
+            return BYTES_CATALOG.calc_max_size(cls.get_type())
 
         @classmethod
         def _to_bytes_partial(cls, buffer, obj):
-            return _BYTES_CATALOG.pack_partial(cls.get_type(), buffer, obj)
+            return BYTES_CATALOG.pack_partial(cls.get_type(), buffer, obj)
 
         @classmethod
         def _from_bytes_partial(cls, buffer: BytesIO):
-            return _BYTES_CATALOG.unpack_partial(cls.get_type(), buffer)
+            return BYTES_CATALOG.unpack_partial(cls.get_type(), buffer)
 
         @classmethod
         def _to_dict(cls, obj):
-            return _JSON_CATALOG.pack(cls.get_type(), obj)
+            return JSON_CATALOG.pack(cls.get_type(), obj)
 
         @classmethod
         def _from_dict(cls, obj):
-            return _JSON_CATALOG.unpack(cls.get_type(), obj)
+            return JSON_CATALOG.unpack(cls.get_type(), obj)
 
     _ForwardRef.__name__ = f"{name}[{type_expr}]"
     _ForwardRef.__qualname__ = _ForwardRef.__name__

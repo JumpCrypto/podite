@@ -12,8 +12,8 @@ from typing import (
     get_origin,
 )
 
-from pod.bytes import _BYTES_CATALOG
-from pod.json import _JSON_CATALOG
+from pod.bytes import BYTES_CATALOG
+from pod.json import JSON_CATALOG
 from pod.decorators import (
     POD_OPTIONS,
     POD_OPTIONS_OVERRIDE,
@@ -139,12 +139,12 @@ class Variant:
     def to_bytes_partial(self, buffer, obj):
         # Notice that tag value is already serialized
         if self.field is not None:
-            _BYTES_CATALOG.pack_partial(self.concrete_field_type, buffer, obj.field)
+            BYTES_CATALOG.pack_partial(self.concrete_field_type, buffer, obj.field)
 
     def from_bytes_partial(self, buffer, instance):
         # Notice is that tag value is already deserialized
         if self.field is not None:
-            field = _BYTES_CATALOG.unpack_partial(self.concrete_field_type, buffer)
+            field = BYTES_CATALOG.unpack_partial(self.concrete_field_type, buffer)
             instance = instance(field)
 
         return instance
@@ -153,12 +153,12 @@ class Variant:
         if self.field is None:
             return None
 
-        return _JSON_CATALOG.pack(self.concrete_field_type, obj.field)
+        return JSON_CATALOG.pack(self.concrete_field_type, obj.field)
 
     def from_dict(self, instance, raw):
         # Tag name/value is encoded in raw
         if self.field is not None:
-            field = _JSON_CATALOG.unpack(self.concrete_field_type, raw)
+            field = JSON_CATALOG.unpack(self.concrete_field_type, raw)
             return instance(field)
         return instance
 
@@ -230,13 +230,13 @@ class Enum(int, Generic[TagType], metaclass=EnumMeta):  # type: ignore
     @classmethod
     def _calc_max_size(cls):
         tag_type = cls.get_tag_type()
-        val_size = _BYTES_CATALOG.calc_max_size(tag_type)
+        val_size = BYTES_CATALOG.calc_max_size(tag_type)
         max_field_size = 0
         for variant in getattr(cls, _NAMES_TO_VARIANTS).values():
             if variant.field is None:
                 variant_size = 0
             else:
-                variant_size = _BYTES_CATALOG.calc_max_size(variant.concrete_field_type)
+                variant_size = BYTES_CATALOG.calc_max_size(variant.concrete_field_type)
 
             max_field_size = max(max_field_size, variant_size)
 
@@ -244,7 +244,7 @@ class Enum(int, Generic[TagType], metaclass=EnumMeta):  # type: ignore
 
     @classmethod
     def _to_bytes_partial(cls, buffer, instance):
-        _BYTES_CATALOG.pack_partial(cls.get_tag_type(), buffer, instance)
+        BYTES_CATALOG.pack_partial(cls.get_tag_type(), buffer, instance)
 
         variant: Variant = cls._get_variant(instance.get_name())
         variant.to_bytes_partial(buffer, instance)
@@ -252,7 +252,7 @@ class Enum(int, Generic[TagType], metaclass=EnumMeta):  # type: ignore
     @classmethod
     def _from_bytes_partial(cls, buffer):
         tag_type = cls.get_tag_type()
-        tag = _BYTES_CATALOG.unpack_partial(tag_type, buffer)
+        tag = BYTES_CATALOG.unpack_partial(tag_type, buffer)
 
         instance = cls(tag)
         variant = cls._get_variant(instance.get_name())

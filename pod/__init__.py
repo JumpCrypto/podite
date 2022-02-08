@@ -58,4 +58,6 @@ from .bytes import (
     dataclass_calc_max_size,
     dataclass_to_bytes_partial,
     dataclass_from_bytes_partial,
+    BYTES_CATALOG,
 )
+from .json import JSON_CATALOG

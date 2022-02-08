@@ -1,7 +1,7 @@
 from dataclasses import is_dataclass, fields
 from io import BytesIO
 from abc import ABC, abstractmethod
-from typing import Tuple, Dict, Callable, Any
+from typing import Tuple, Dict, Any
 
 from .core import PodConverterCatalog, POD_SELF_CONVERTER
 
@@ -32,7 +32,7 @@ FROM_BYTES_PARTIAL = "_from_bytes_partial"
 
 def dataclass_is_static(cls) -> bool:
     for field in fields(cls):
-        if not _BYTES_CATALOG.is_static(cls._get_field_type(field.type)):
+        if not BYTES_CATALOG.is_static(cls._get_field_type(field.type)):
             return False
     return True
 
@@ -40,7 +40,7 @@ def dataclass_is_static(cls) -> bool:
 def dataclass_calc_max_size(cls):
     total = 0
     for field in fields(cls):
-        total += _BYTES_CATALOG.calc_max_size(cls._get_field_type(field.type))
+        total += BYTES_CATALOG.calc_max_size(cls._get_field_type(field.type))
 
     return total
 
@@ -48,13 +48,13 @@ def dataclass_calc_max_size(cls):
 def dataclass_to_bytes_partial(cls, buffer, obj):
     for field in fields(cls):
         value = getattr(obj, field.name)
-        _BYTES_CATALOG.pack_partial(cls._get_field_type(field.type), buffer, value)
+        BYTES_CATALOG.pack_partial(cls._get_field_type(field.type), buffer, value)
 
 
 def dataclass_from_bytes_partial(cls, buffer, **kwargs):
     values = {}
     for field in fields(cls):
-        values[field.name] = _BYTES_CATALOG.unpack_partial(
+        values[field.name] = BYTES_CATALOG.unpack_partial(
             cls._get_field_type(field.type), buffer
         )
     return cls(**values)
@@ -126,10 +126,10 @@ class BytesPodConverterCatalog(PodConverterCatalog[BytesPodConverter]):
         helpers = super().generate_helpers(type_)
 
         def is_static(cls):
-            return _BYTES_CATALOG.is_static(cls)
+            return BYTES_CATALOG.is_static(cls)
 
         def calc_max_size(cls):
-            return _BYTES_CATALOG.calc_max_size(cls)
+            return BYTES_CATALOG.calc_max_size(cls)
 
         def calc_size(cls):
             if not cls.is_static():
@@ -168,5 +168,5 @@ class BytesPodConverterCatalog(PodConverterCatalog[BytesPodConverter]):
         }
 
 
-_BYTES_CATALOG = BytesPodConverterCatalog()
-_BYTES_CATALOG.register(SelfBytesPodConverter().get_mapping)
+BYTES_CATALOG = BytesPodConverterCatalog()
+BYTES_CATALOG.register(SelfBytesPodConverter().get_mapping)
