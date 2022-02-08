@@ -53,3 +53,9 @@ from .types import (
     Default,
     ForwardRef,
 )
+from .bytes import (
+    dataclass_is_static,
+    dataclass_calc_max_size,
+    dataclass_to_bytes_partial,
+    dataclass_from_bytes_partial,
+)

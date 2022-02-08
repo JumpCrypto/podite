@@ -48,50 +48,43 @@ class JsonPodConverterCatalog(PodConverterCatalog[JsonPodConverter]):
         converter = self._get_converter_or_raise(type_, error_msg)
         return converter.unpack_dict(type_, raw, **kwargs)
 
-    def generate_helpers(self, type_) -> Dict[str, Callable]:
+    def generate_helpers(self, type_) -> Dict[str, classmethod]:
         helpers = super().generate_helpers(type_)
 
-        @classmethod  # type: ignore[misc]
         def to_dict(cls, obj, **kwargs):
             return cls.pack(obj, converter="json", **kwargs)
 
-        @classmethod  # type: ignore[misc]
         def to_dict_file(cls, filename, obj, /, mode="w", **kwargs):
             with open(filename, mode) as fin:
                 obj = cls.to_dict(obj, **kwargs)
                 print(obj, file=fin)
 
-        @classmethod  # type: ignore[misc]
         def from_dict(cls, raw, **kwargs):
             return cls.unpack(raw, converter="json", **kwargs)
 
-        @classmethod  # type: ignore[misc]
         def from_dict_file(cls, filename, /, **kwargs):
             with open(filename, "r") as fin:
                 raw = json.load(fin)
                 return cls.from_dict(raw, **kwargs)
 
-        helpers["to_dict"] = to_dict
-        helpers["to_dict_file"] = to_dict_file
+        helpers["to_dict"] = classmethod(to_dict)
+        helpers["to_dict_file"] = classmethod(to_dict_file)
 
-        helpers["from_dict"] = from_dict
-        helpers["from_dict_file"] = from_dict_file
+        helpers["from_dict"] = classmethod(from_dict)
+        helpers["from_dict_file"] = classmethod(from_dict_file)
 
         if is_dataclass(type_):
             helpers.update(self._generate_packers(type_))
 
         return helpers
 
-    def _generate_packers(self, type_) -> Dict[str, Callable]:
-        helpers: Dict[str, Callable] = {}
-
+    def _generate_packers(self, type_) -> Dict[str, classmethod]:
         from .decorators import POD_OPTIONS
 
         options = getattr(type_, POD_OPTIONS, {})
         rename_fn = options.get(POD_OPTIONS_RENAME, lambda x: x)
         rename_fn = resolve_name_mapping(rename_fn)
 
-        @classmethod  # type: ignore[misc]
         def _to_dict(cls, obj):
             values = {}
             for field in fields(cls):
@@ -102,7 +95,6 @@ class JsonPodConverterCatalog(PodConverterCatalog[JsonPodConverter]):
 
             return values
 
-        @classmethod  # type: ignore[misc]
         def _from_dict(cls, obj, **kwargs):
             values = {}
             for field in fields(cls):
@@ -116,10 +108,10 @@ class JsonPodConverterCatalog(PodConverterCatalog[JsonPodConverter]):
                     )
             return cls(**values)
 
-        helpers[TO_DICT] = _to_dict
-        helpers[FROM_DICT] = _from_dict
-
-        return helpers
+        return {
+            TO_DICT: classmethod(_to_dict),
+            FROM_DICT: classmethod(_from_dict),
+        }
 
 
 _JSON_CATALOG = JsonPodConverterCatalog()

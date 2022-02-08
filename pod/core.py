@@ -71,8 +71,7 @@ class PodConverterCatalog(Generic[PodConverter]):
         converter = self._get_converter_or_raise(type_, error_msg)
         return converter.unpack(type_, raw, **kwargs)
 
-    def generate_helpers(self, type_) -> Dict[str, Callable]:
-        @classmethod  # type: ignore[misc]
+    def generate_helpers(self, type_) -> Dict[str, classmethod]:
         def _get_field_type(cls, field):
             if isinstance(field, str):
                 module = sys.modules[cls.__module__]
@@ -80,4 +79,4 @@ class PodConverterCatalog(Generic[PodConverter]):
             else:
                 return field
 
-        return {GET_FIELD_TYPE: _get_field_type}
+        return {GET_FIELD_TYPE: classmethod(_get_field_type)}
