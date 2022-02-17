@@ -1,5 +1,5 @@
-from enum import _is_sunder, _is_dunder, _is_descriptor  # type: ignore
 from dataclasses import dataclass
+from enum import _is_sunder, _is_dunder, _is_descriptor  # type: ignore
 from typing import (
     Optional,
     Type,
@@ -12,14 +12,13 @@ from typing import (
     get_origin,
 )
 
-from pod.bytes import BYTES_CATALOG
 from pod.json import JSON_CATALOG
+from pod.bytes import BYTES_CATALOG
 from pod.decorators import (
     POD_OPTIONS,
     POD_OPTIONS_OVERRIDE,
     POD_OPTIONS_DATACLASS_FN,
 )
-
 from .atomic import U8
 from .. import pod
 from .._utils import resolve_name_mapping, get_calling_module, get_concrete_type
@@ -210,8 +209,11 @@ class Enum(int, Generic[TagType], metaclass=EnumMeta):  # type: ignore
             self.field,
         )
 
+    def __ne__(self, other):
+        return not (self == other)
+
     def __eq__(self, other):
-        return type(self) == type(other) and int(self) == int(other)
+        return type(self) == type(other) and int(self) == int(other) and self.field == other.field
 
     def __hash__(self):
         return hash((type(self), int(self), self.field))

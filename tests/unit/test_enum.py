@@ -1,7 +1,8 @@
+import functools
 from typing import Optional
 
 from pod.decorators import pod
-from pod.types.atomic import U16, U32
+from pod.types.atomic import U16, U32, U8
 from pod.types.enum import Enum, Variant, ENUM_TAG_NAME_MAP, ENUM_TAG_NAME, named_fields
 
 
@@ -119,3 +120,18 @@ def test_json_enum_tagged():
     assert B.Y == B.from_dict(dict(kind="Y"))
     assert B.Z == B.from_dict(dict(kind="Z"))
     assert B.Z(t(b=5, c=6)) == B.from_dict(dict(kind="Z", b=5, c=6))
+
+
+def test_enum_instances_eq():
+    @functools.lru_cache
+    def get_class():
+        @pod
+        class A(Enum):
+            APPLE = None
+            INT = Variant(field=U8)
+        return A
+    A1 = get_class()
+    A2 = get_class()
+
+    assert A1.APPLE == A2.APPLE
+    assert A1.INT(1) == A1.INT(1)

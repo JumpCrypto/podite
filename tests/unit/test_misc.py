@@ -32,7 +32,7 @@ def test_bytes_static_option_forward_ref():
     assert actual == expect
 
     actual = type_.from_bytes(b"\x01\x05\x00")
-    expect = option.SOME(5)
+    expect = option.SOME(Element(5))
 
     assert actual == expect
 

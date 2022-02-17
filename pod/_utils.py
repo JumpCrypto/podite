@@ -1,10 +1,11 @@
 import inspect
+from functools import lru_cache
 
 
 class _GetitemToCall:
     def __init__(self, name, func):
         self.name = name
-        self.func = func
+        self.func = lru_cache()(func)
 
     def __getitem__(self, args):
         if isinstance(args, tuple):

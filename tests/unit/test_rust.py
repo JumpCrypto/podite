@@ -1,4 +1,4 @@
-from pod import U32, Option
+from pod import U8, U32, Option
 
 
 def test_option_packed():
@@ -16,3 +16,25 @@ def test_option_packed():
     expect = type_.SOME(5)
 
     assert actual == expect
+
+
+def test_option_equal():
+    a = Option[U32]
+    b = Option[U32]
+    c = Option[U8]
+
+    assert a == b
+    assert type(a) == type(b)
+
+    assert a.NONE == b.NONE
+    assert a.SOME(2) == b.SOME(2)
+
+    x = a.SOME(2)
+    y = b.SOME(3)
+    eq = x == y
+    assert not eq
+    assert x != y
+
+    assert b.NONE != c.NONE
+    assert b.SOME(1) != c.SOME(1)
+    assert b.SOME(2) != c.SOME(1)
