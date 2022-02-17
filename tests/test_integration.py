@@ -41,11 +41,8 @@ def test_round_trip_bytes():
         ],
         [Simple(5, "A string is a wonderful thing")]
     )
-    print(val)
     serialized = MyStruct.to_bytes(val)
-    print(serialized)
     deserialized = MyStruct.from_bytes(serialized)
-    print(deserialized)
 
     assert val == deserialized
 

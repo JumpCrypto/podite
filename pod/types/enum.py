@@ -213,7 +213,13 @@ class Enum(int, Generic[TagType], metaclass=EnumMeta):  # type: ignore
         return not (self == other)
 
     def __eq__(self, other):
-        return type(self) == type(other) and int(self) == int(other) and self.field == other.field
+        return self.is_a(other) and self.field == other.field
+
+    def is_a(self, variant):
+        """
+        Usage: `val.is_a(Option.Some)
+        """
+        return type(self) == type(variant) and int(self) == int(variant)
 
     def __hash__(self):
         return hash((type(self), int(self), self.field))
