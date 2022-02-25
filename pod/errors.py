@@ -5,14 +5,13 @@ class PodPathError(Exception):
         else:
             self.path = [name]
         self.ty = ty
-        if val:
-            self.val = val
+        self.val = val
         self.message = message
         super().__init__(message)
 
     def __str__(self):
         path = ".".join(self.path[::-1])
-        if self.val:
+        if self.val is not None:
             return f'{self.message}\n Path: {path}\n Type: {self.ty}, Val: {type(self.val)}({self.val})'
         else:
-            return f'{self.message}\n Path: {path}\n'
+            return f'{self.message}\n Path: {path}\n Type: {self.ty}'

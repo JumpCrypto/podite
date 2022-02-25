@@ -62,9 +62,19 @@ def test_fixed_len_array_wrong_size():
     class AnArray:
         b: FixedLenArray[U8, 10]
 
+    @pod
+    class DiffArray:
+        b: FixedLenArray[U8, 3]
+
     arr = AnArray([1, 2, 3])
-    print(arr)
     try:
         ser = AnArray.to_bytes(arr)
+    except PodPathError as e:
+        assert e.path == ["b", "AnArray"]
+
+    arr = DiffArray([1, 2, 3])
+    ser = DiffArray.to_bytes(arr)
+    try:
+        deser = AnArray.from_bytes(ser)
     except PodPathError as e:
         assert e.path == ["b", "AnArray"]
