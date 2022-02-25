@@ -1,9 +1,11 @@
+from abc import ABC, abstractmethod
 from dataclasses import is_dataclass, fields
 from io import BytesIO
-from abc import ABC, abstractmethod
 from typing import Tuple, Dict, Any
+from .errors import PodPathError
 
 from .core import PodConverterCatalog, POD_SELF_CONVERTER
+
 
 
 class BytesPodConverter(ABC):
@@ -47,16 +49,32 @@ def dataclass_calc_max_size(cls):
 
 def dataclass_to_bytes_partial(cls, buffer, obj):
     for field in fields(cls):
-        value = getattr(obj, field.name)
-        BYTES_CATALOG.pack_partial(cls._get_field_type(field.type), buffer, value)
+        value = None
+        try:
+            value = getattr(obj, field.name)
+            BYTES_CATALOG.pack_partial(cls._get_field_type(field.type), buffer, value)
+        except PodPathError as e:
+            e.path.append(field.name)
+            e.path.append(cls.__name__)
+            raise
+        except Exception as e:
+            raise PodPathError("Failed to serialize dataclass", [field.name, cls.__name__], field.type.__name__, value) from e
+
 
 
 def dataclass_from_bytes_partial(cls, buffer, **kwargs):
     values = {}
     for field in fields(cls):
-        values[field.name] = BYTES_CATALOG.unpack_partial(
-            cls._get_field_type(field.type), buffer
-        )
+        try:
+            values[field.name] = BYTES_CATALOG.unpack_partial(
+                cls._get_field_type(field.type), buffer
+            )
+        except PodPathError as e:
+            e.path.append(field.name)
+            e.path.append(cls.__name__)
+            raise
+        except Exception as e:
+            raise PodPathError("Failed to deserialize dataclass", [field.name, cls.__name__], field.type.__name__) from e
     return cls(**values)
 
 

@@ -60,4 +60,5 @@ from .bytes import (
     dataclass_from_bytes_partial,
     BYTES_CATALOG,
 )
+from .errors import PodPathError
 from .json import JSON_CATALOG

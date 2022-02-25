@@ -1,19 +1,23 @@
 from pod import (
     FixedLenArray,
+    FixedLenStr,
     Option,
     Vec,
     Str,
     Bytes,
-    U32,
+    U64,
+    U16,
     pod,
     U8,
+    PodPathError,
 )
 
 
 @pod
 class Simple:
-    num: U32
-    string: Str[100]
+    a: U64
+    b: U16
+    padding: FixedLenStr[6]
 
 
 @pod
@@ -24,6 +28,12 @@ class MyStruct:
     a_bytes: Bytes[512]
     a_vec: Vec[Option[Str[10]], 10]
     simple_vec: Vec[Simple, 10]
+
+
+def test_write_to_files_for_rust_deserialization():
+    serialized = Simple.to_bytes(Simple(5, 125, "ByeBye"))
+    with open("tests/round_trip_rust/simple.bytes", "wb") as f:
+        f.write(serialized)
 
 
 def test_round_trip_bytes():
@@ -39,7 +49,7 @@ def test_round_trip_bytes():
             O.SOME("bye"),
             O.SOME("sad"),
         ],
-        [Simple(5, "A string is a wonderful thing")]
+        [Simple(5, 124, "PodStr")]
     )
     serialized = MyStruct.to_bytes(val)
     deserialized = MyStruct.from_bytes(serialized)
@@ -52,9 +62,9 @@ def test_fixed_len_array_wrong_size():
     class AnArray:
         b: FixedLenArray[U8, 10]
 
-    b = AnArray([1, 2, 3])
-    print(b)
+    arr = AnArray([1, 2, 3])
+    print(arr)
     try:
-        ser = AnArray.to_bytes(b)
-    except ValueError:
-        pass
+        ser = AnArray.to_bytes(arr)
+    except PodPathError as e:
+        assert e.path == ["b", "AnArray"]

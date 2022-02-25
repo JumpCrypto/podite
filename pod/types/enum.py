@@ -1,3 +1,4 @@
+from _io import BytesIO
 from dataclasses import dataclass
 from enum import _is_sunder, _is_dunder, _is_descriptor  # type: ignore
 from typing import (
