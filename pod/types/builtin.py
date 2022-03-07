@@ -3,6 +3,8 @@ from typing import Optional, get_origin, Union, get_args, Any, ForwardRef
 from pod.bytes import BytesPodConverter, BYTES_CATALOG
 from pod.json import JsonPodConverter, JSON_CATALOG
 
+from .atomic import U32
+
 
 class BoolConverter(BytesPodConverter, JsonPodConverter):
     def get_mapping(self, type_):
@@ -29,6 +31,35 @@ class BoolConverter(BytesPodConverter, JsonPodConverter):
             raise ValueError("Invalid byte")
 
         return b == b"\x01"
+
+    def pack_dict(self, type_, obj, **kwargs) -> Any:
+        return obj
+
+    def unpack_dict(self, type_, obj, **kwargs) -> Any:
+        return obj
+
+
+class StrConverter(BytesPodConverter, JsonPodConverter):
+    def get_mapping(self, type_):
+        if type_ == str:
+            return self
+
+        return None
+
+    def is_static(self, type_) -> bool:
+        return False
+
+    def calc_max_size(self, type_) -> int:
+        return 2 ** 32 + 4
+
+    def pack_partial(self, type_, buffer, obj, **kwargs):
+        BYTES_CATALOG.pack_partial(U32, buffer, len(obj))
+        buffer.write(obj.encode("utf-8"))
+
+    def unpack_partial(self, type_, buffer, **kwargs) -> bool:
+        length = BYTES_CATALOG.unpack_partial(U32, buffer)
+
+        return buffer.read(length).decode("utf-8")
 
     def pack_dict(self, type_, obj, **kwargs) -> Any:
         return obj
@@ -207,10 +238,12 @@ class JsonListConverter(JsonPodConverter):
 
 def register_builtins():
     BYTES_CATALOG.register(BoolConverter().get_mapping)
+    BYTES_CATALOG.register(StrConverter().get_mapping)
     BYTES_CATALOG.register(OptionalConverter().get_mapping)
     BYTES_CATALOG.register(TupleConverter().get_mapping)
 
     JSON_CATALOG.register(BoolConverter().get_mapping)
+    JSON_CATALOG.register(StrConverter().get_mapping)
     JSON_CATALOG.register(OptionalConverter().get_mapping)
     JSON_CATALOG.register(TupleConverter().get_mapping)
     JSON_CATALOG.register(JsonIdentityPodConverter().get_mapping)

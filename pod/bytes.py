@@ -61,7 +61,6 @@ def dataclass_to_bytes_partial(cls, buffer, obj):
             raise PodPathError("Failed to serialize dataclass", [field.name, cls.__name__], field.type.__name__, value) from e
 
 
-
 def dataclass_from_bytes_partial(cls, buffer, **kwargs):
     values = {}
     for field in fields(cls):

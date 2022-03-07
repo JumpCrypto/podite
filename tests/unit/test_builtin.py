@@ -17,6 +17,18 @@ def test_bytes_bool():
     assert not A.from_bytes(b"\x00\x05\x06").x
 
 
+def test_bytes_str():
+    @pod
+    class A:
+        x: bool
+        y: str
+
+    assert not A.is_static()
+
+    assert A.from_bytes(b"\x01\x03\x00\x00\x00abc").x
+    assert A.from_bytes(b"\x01\x03\x00\x00\x00abc").y == "abc"
+
+
 def test_json_bool():
     @pod
     class A:
