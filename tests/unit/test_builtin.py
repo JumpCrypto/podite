@@ -25,8 +25,8 @@ def test_bytes_str():
 
     assert not A.is_static()
 
-    assert A.from_bytes(b"\x01\x03\x00\x00\x00abc").x
-    assert A.from_bytes(b"\x01\x03\x00\x00\x00abc").y == "abc"
+    assert A.from_bytes(b"\x01\x03\x00\x00\x00\x00\x00\x00\x00abc").x
+    assert A.from_bytes(b"\x01\x03\x00\x00\x00\x00\x00\x00\x00abc").y == "abc"
 
 
 def test_json_bool():

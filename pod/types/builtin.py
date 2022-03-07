@@ -3,7 +3,7 @@ from typing import Optional, get_origin, Union, get_args, Any, ForwardRef
 from pod.bytes import BytesPodConverter, BYTES_CATALOG
 from pod.json import JsonPodConverter, JSON_CATALOG
 
-from .atomic import U32
+from .atomic import U64
 
 
 class BoolConverter(BytesPodConverter, JsonPodConverter):
@@ -50,14 +50,14 @@ class StrConverter(BytesPodConverter, JsonPodConverter):
         return False
 
     def calc_max_size(self, type_) -> int:
-        return 2 ** 32 + 4
+        return 2 ** 64 + 8
 
     def pack_partial(self, type_, buffer, obj, **kwargs):
-        BYTES_CATALOG.pack_partial(U32, buffer, len(obj))
+        BYTES_CATALOG.pack_partial(U64, buffer, len(obj))
         buffer.write(obj.encode("utf-8"))
 
     def unpack_partial(self, type_, buffer, **kwargs) -> bool:
-        length = BYTES_CATALOG.unpack_partial(U32, buffer)
+        length = BYTES_CATALOG.unpack_partial(U64, buffer)
 
         return buffer.read(length).decode("utf-8")
 
