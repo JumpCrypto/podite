@@ -1,11 +1,13 @@
-from pod import U8, U32, Option
+from pod import U8, U32, Option, AutoTagTypeValueManager
 
 
 def test_option_packed():
     type_ = Option[U32]
 
     assert not type_.is_static()
-    assert type_.calc_max_size() == 5
+    assert type_.calc_max_size() == 12
+    with AutoTagTypeValueManager(U8):
+        assert type_.calc_max_size() == 5
 
     actual = type_.from_bytes(b"\x00")
     expect = type_.NONE

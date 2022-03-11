@@ -38,6 +38,10 @@ def test_write_to_files_for_rust_deserialization():
 
 def test_round_trip_bytes():
     O = Option[Str[10]]
+
+    simple = Simple(5, 123, "PodStr")
+    assert Simple.calc_size(simple) == 8 + 2 + 6
+    assert Bytes[512].calc_size(bytes([1, 2, 3])) == 4 + 3
     val = MyStruct(
         8,
         "hi",
@@ -51,6 +55,16 @@ def test_round_trip_bytes():
         ],
         [Simple(5, 124, "PodStr")]
     )
+
+    # sizes
+    a_builtin = 1
+    a_string = 4 + 2
+    a_array = 10
+    a_bytes = 4 + 3
+    a_vec = (4 + (1 + 4 + 2) + 1 + 2 * (1 + 4 + 3))
+    simple_vec = (4 + 1 * (8 + 2 + 6))
+    assert MyStruct.calc_size(obj=val) == a_builtin + a_string + a_array + a_bytes + a_vec + simple_vec
+
     serialized = MyStruct.to_bytes(val)
     deserialized = MyStruct.from_bytes(serialized)
 

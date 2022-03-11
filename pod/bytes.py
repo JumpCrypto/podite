@@ -1,12 +1,10 @@
 from abc import ABC, abstractmethod
-from dataclasses import is_dataclass, fields
+from dataclasses import is_dataclass, fields, dataclass
 from io import BytesIO
-from typing import Tuple, Dict, Any
+from typing import Tuple, Dict, Any, Literal
 from .errors import PodPathError
-
 from .core import PodConverterCatalog, POD_SELF_CONVERTER
-
-
+from ._utils import FORMAT_BORSCH, FORMAT_PASS, FORMAT_AUTO, FORMAT_ZERO_COPY, FORMAT_TO_TYPE, AutoTagTypeValueManager
 
 class BytesPodConverter(ABC):
     @abstractmethod
@@ -14,7 +12,19 @@ class BytesPodConverter(ABC):
         raise NotImplementedError
 
     @abstractmethod
+    def calc_size(self, type_, obj, **kwargs) -> int:
+        """
+        Returns the current size of the type. This is equal to the max size when no variable length types are present
+        Note: set AutoTagType value using AutoTagTypeValueManager for the format you want the size for
+        """
+        raise NotImplementedError
+
+    @abstractmethod
     def calc_max_size(self, type_) -> int:
+        """
+        Returns the maximum size of the type.
+        Note: set AutoTagType value using AutoTagTypeValueManager for the format you want the size for
+        """
         raise NotImplementedError
 
     @abstractmethod
@@ -27,6 +37,7 @@ class BytesPodConverter(ABC):
 
 
 IS_STATIC = "_is_static"
+CALC_SIZE = "_calc_size"
 CALC_MAX_SIZE = "_calc_max_size"
 TO_BYTES_PARTIAL = "_to_bytes_partial"
 FROM_BYTES_PARTIAL = "_from_bytes_partial"
@@ -39,6 +50,14 @@ def dataclass_is_static(cls) -> bool:
     return True
 
 
+def dataclass_calc_size(cls, obj):
+    total = 0
+    for field in fields(cls):
+        total += BYTES_CATALOG.calc_size(cls._get_field_type(field.type), getattr(obj, field.name))
+
+    return total
+
+
 def dataclass_calc_max_size(cls):
     total = 0
     for field in fields(cls):
@@ -47,12 +66,12 @@ def dataclass_calc_max_size(cls):
     return total
 
 
-def dataclass_to_bytes_partial(cls, buffer, obj):
+def dataclass_to_bytes_partial(cls, buffer, obj, **kwargs):
     for field in fields(cls):
         value = None
         try:
             value = getattr(obj, field.name)
-            BYTES_CATALOG.pack_partial(cls._get_field_type(field.type), buffer, value)
+            BYTES_CATALOG.pack_partial(cls._get_field_type(field.type), buffer, value, **kwargs)
         except PodPathError as e:
             e.path.append(field.name)
             e.path.append(cls.__name__)
@@ -66,7 +85,7 @@ def dataclass_from_bytes_partial(cls, buffer, **kwargs):
     for field in fields(cls):
         try:
             values[field.name] = BYTES_CATALOG.unpack_partial(
-                cls._get_field_type(field.type), buffer
+                cls._get_field_type(field.type), buffer, **kwargs
             )
         except PodPathError as e:
             e.path.append(field.name)
@@ -86,6 +105,9 @@ class SelfBytesPodConverter(BytesPodConverter):
 
     def is_static(self, type_) -> bool:
         return getattr(type_, IS_STATIC)()
+
+    def calc_size(self, type_, obj, **kwargs) -> int:
+        return getattr(type_, CALC_SIZE)(obj, **kwargs)
 
     def calc_max_size(self, type_) -> int:
         return getattr(type_, CALC_MAX_SIZE)()
@@ -114,30 +136,68 @@ class BytesPodConverterCatalog(PodConverterCatalog[BytesPodConverter]):
         converter = self._get_converter_or_raise(type_, error_msg)
         return converter.calc_max_size(type_)
 
-    def pack(self, type_, obj, **kwargs):
+    def calc_size(self, type_, obj=None, format=FORMAT_BORSCH, **kwargs):
+        # zero-copy format does not support dynamic sizes
+        if obj is None or format == FORMAT_ZERO_COPY:
+            return self.calc_max_size(type_)
+
+        error_msg = f"No converter was able to calculate size of type {type_}"
+        converter = self._get_converter_or_raise(type_, error_msg)
+        return converter.calc_size(type_, obj, **kwargs)
+
+    def pack(self, type_, obj, format=FORMAT_BORSCH, **kwargs):
         buffer = BytesIO()
-        self.pack_partial(type_, buffer, obj, **kwargs)
+        error_msg = "No converter was able to pack raw data"
+        converter = self._get_converter_or_raise(type_, error_msg)
+
+        if format in FORMAT_TO_TYPE:
+            with AutoTagTypeValueManager(FORMAT_TO_TYPE[format]):
+                self.pack_partial(type_, buffer, obj, format=format, **kwargs)
+        elif format == FORMAT_PASS:
+            self.pack_partial(type_, buffer, obj, format=format, **kwargs)
+        else:
+            raise ValueError(f'Format argument must be {FORMAT_AUTO}, {FORMAT_BORSCH}, or {FORMAT_ZERO_COPY}, found {format}')
 
         return buffer.getvalue()
 
-    def pack_partial(self, type_, buffer, obj, **kwargs):
+    def pack_partial(self, type_, buffer, obj, format=FORMAT_BORSCH, **kwargs):
         error_msg = "No converter was able to pack raw data"
         converter = self._get_converter_or_raise(type_, error_msg)
-        return converter.pack_partial(type_, buffer, obj, **kwargs)
 
-    def unpack(self, type_, raw, checked=False, **kwargs) -> object:
+        return converter.pack_partial(type_, buffer, obj, format=format, **kwargs)
+
+    def unpack(self, type_, raw, checked=False, format=FORMAT_AUTO, **kwargs) -> object:
         buffer = BytesIO(raw)
-        obj = self.unpack_partial(type_, buffer, **kwargs)
+
+        error_msg = "No converter was able to unpack object"
+        converter = self._get_converter_or_raise(type_, error_msg)
+        if format == FORMAT_AUTO:
+            with AutoTagTypeValueManager(FORMAT_TO_TYPE[FORMAT_ZERO_COPY]):
+                pos = buffer.tell()
+                buffer.seek(0, 2)
+                if converter.calc_max_size(type_) == buffer.tell():
+                    format = FORMAT_ZERO_COPY
+                else:
+                    format = FORMAT_BORSCH
+                buffer.seek(pos)
+
+        if format in FORMAT_TO_TYPE:
+            with AutoTagTypeValueManager(FORMAT_TO_TYPE[format]):
+                obj = self.unpack_partial(type_, buffer, format=format, **kwargs)
+        elif format == FORMAT_PASS:
+            obj = converter.unpack_partial(type_, buffer, format=format, **kwargs)
+        else:
+            raise ValueError(f'Format argument must be {FORMAT_AUTO}, {FORMAT_BORSCH}, or {FORMAT_ZERO_COPY}, found {format}')
 
         if checked and buffer.tell() < len(buffer.getvalue()):
             raise RuntimeError("Unused bytes in provided raw data")
 
         return obj
 
-    def unpack_partial(self, type_, buffer, **kwargs) -> Tuple[bool, object]:
+    def unpack_partial(self, type_, buffer, format=FORMAT_AUTO, **kwargs) -> Tuple[bool, object]:
         error_msg = "No converter was able to unpack object"
         converter = self._get_converter_or_raise(type_, error_msg)
-        return converter.unpack_partial(type_, buffer, **kwargs)
+        return converter.unpack_partial(type_, buffer, format=format, **kwargs)
 
     def generate_helpers(self, type_) -> Dict[str, classmethod]:
         helpers = super().generate_helpers(type_)
@@ -148,17 +208,21 @@ class BytesPodConverterCatalog(PodConverterCatalog[BytesPodConverter]):
         def calc_max_size(cls):
             return BYTES_CATALOG.calc_max_size(cls)
 
-        def calc_size(cls):
-            if not cls.is_static():
-                raise RuntimeError("calc_size can only be called for static classes")
-
-            return cls.calc_max_size()
+        def calc_size(cls, obj=None, format=FORMAT_BORSCH, **kwargs):
+            if obj is None or format == FORMAT_ZERO_COPY:
+                if not cls.is_static():
+                    raise RuntimeError("calc_size can only be called for static classes")
+                return cls.calc_max_size()
+            if format == FORMAT_BORSCH:
+                with AutoTagTypeValueManager(FORMAT_TO_TYPE[FORMAT_BORSCH]):
+                    return BYTES_CATALOG.calc_size(cls, obj, format=format, **kwargs)
+            return BYTES_CATALOG.calc_size(cls, obj, format=format, **kwargs)
 
         def to_bytes(cls, obj, **kwargs):
             return cls.pack(obj, converter="bytes", **kwargs)
 
-        def from_bytes(cls, raw, **kwargs):
-            return cls.unpack(raw, converter="bytes", **kwargs)
+        def from_bytes(cls, raw, format=FORMAT_AUTO, **kwargs):
+            return cls.unpack(raw, converter="bytes", format=format, **kwargs)
 
         helpers.update(
             {
@@ -180,6 +244,7 @@ class BytesPodConverterCatalog(PodConverterCatalog[BytesPodConverter]):
         return {
             IS_STATIC: classmethod(dataclass_is_static),
             CALC_MAX_SIZE: classmethod(dataclass_calc_max_size),
+            CALC_SIZE: classmethod(dataclass_calc_size),
             TO_BYTES_PARTIAL: classmethod(dataclass_to_bytes_partial),
             FROM_BYTES_PARTIAL: classmethod(dataclass_from_bytes_partial),
         }

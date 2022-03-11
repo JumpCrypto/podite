@@ -16,6 +16,9 @@ class BoolConverter(BytesPodConverter, JsonPodConverter):
     def is_static(self, type_) -> bool:
         return True
 
+    def calc_size(self, type_, **kwargs) -> int:
+        return 1
+
     def calc_max_size(self, type_) -> int:
         return 1
 
@@ -48,6 +51,9 @@ class StrConverter(BytesPodConverter, JsonPodConverter):
 
     def is_static(self, type_) -> bool:
         return False
+
+    def calc_size(self, type_, obj, **kwargs) -> int:
+        return 8 + len(obj)
 
     def calc_max_size(self, type_) -> int:
         return 2 ** 64 + 8
@@ -90,6 +96,10 @@ class OptionalConverter(BytesPodConverter, JsonPodConverter):
     def is_static(self, type_) -> bool:
         return False
 
+    def calc_size(self, type_, obj, **kwargs) -> int:
+        field_type = self.get_field_type(type_)
+        return 1 + BYTES_CATALOG.calc_size(field_type)
+
     def calc_max_size(self, type_) -> int:
         field_type = self.get_field_type(type_)
         return 1 + BYTES_CATALOG.calc_max_size(field_type)
@@ -101,7 +111,7 @@ class OptionalConverter(BytesPodConverter, JsonPodConverter):
             buffer.write(b"\x01")
 
             field_type = self.get_field_type(type_)
-            BYTES_CATALOG.pack_partial(field_type, buffer, obj)
+            BYTES_CATALOG.pack_partial(field_type, buffer, obj, **kwargs)
 
     def unpack_partial(self, type_, buffer, **kwargs):
         b = buffer.read(1)
@@ -115,7 +125,7 @@ class OptionalConverter(BytesPodConverter, JsonPodConverter):
             return None
 
         field_type = self.get_field_type(type_)
-        return BYTES_CATALOG.unpack_partial(field_type, buffer)
+        return BYTES_CATALOG.unpack_partial(field_type, buffer, **kwargs)
 
     def pack_dict(self, type_, obj, **kwargs) -> Any:
         if obj is None:
@@ -142,6 +152,13 @@ class TupleConverter(BytesPodConverter, JsonPodConverter):
                 return False
         return True
 
+    def calc_size(self, type_, obj, **kwargs) -> int:
+        total = 0
+        for obj,arg_type in zip(obj, get_args(type_)):
+            total += BYTES_CATALOG.calc_size(arg_type, obj, **kwargs)
+
+        return total
+
     def calc_max_size(self, type_) -> int:
         catalog = BYTES_CATALOG
 
@@ -160,7 +177,7 @@ class TupleConverter(BytesPodConverter, JsonPodConverter):
             raise ValueError(f"Tuple should have exactly {len(fields_types)} elements")
 
         for e, t in zip(obj, fields_types):
-            BYTES_CATALOG.pack_partial(t, buffer, e)
+            BYTES_CATALOG.pack_partial(t, buffer, e, **kwargs)
 
     def unpack_partial(self, type_, buffer, **kwargs):
         fields_types = get_args(type_)

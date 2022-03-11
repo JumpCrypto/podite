@@ -5,7 +5,7 @@ from ..json import JSON_CATALOG
 from ..decorators import pod
 
 
-def _fixed_len_array(name, type_, length):
+def _fixed_len_array(name, type_, length, autopad=False):
     module = get_calling_module()
 
     @pod(dataclass_fn=None)
@@ -15,13 +15,17 @@ def _fixed_len_array(name, type_, length):
             return BYTES_CATALOG.is_static(get_concrete_type(module, type_))
 
         @classmethod
+        def _calc_size(cls, obj, **kwargs):
+            return cls._calc_max_size()
+
+        @classmethod
         def _calc_max_size(cls):
             return (
                     BYTES_CATALOG.calc_max_size(get_concrete_type(module, type_)) * length
             )
 
         @classmethod
-        def _from_bytes_partial(cls, buffer):
+        def _from_bytes_partial(cls, buffer, **kwargs):
             result = []
             for _ in range(length):
                 value = BYTES_CATALOG.unpack_partial(
@@ -32,7 +36,7 @@ def _fixed_len_array(name, type_, length):
             return result
 
         @classmethod
-        def _to_bytes_partial(cls, buffer, obj):
+        def _to_bytes_partial(cls, buffer, obj, **kwargs):
             if len(obj) != length:
                 raise ValueError("Length of array does not equal fixed length")
             for elem in obj:
@@ -66,18 +70,22 @@ def _fixed_len_bytes(name, length):
             return True
 
         @classmethod
+        def _calc_size(cls, obj, **kwargs):
+            return cls._calc_max_size()
+
+        @classmethod
         def _calc_max_size(cls):
             return length
 
         @classmethod
-        def _from_bytes_partial(cls, buffer):
+        def _from_bytes_partial(cls, buffer, **kwargs):
             val = buffer.read(length)
             if len(val) != length:
                 raise ValueError(f"Buffer length is {len(val)}, but expected {length}")
             return val
 
         @classmethod
-        def _to_bytes_partial(cls, buffer, obj):
+        def _to_bytes_partial(cls, buffer, obj, **kwargs):
             buffer.write(obj.ljust(length, b"\x00"))
 
         @classmethod
@@ -110,11 +118,15 @@ def _fixed_len_str(name, length, encoding="UTF-8", autopad=True):
             return True
 
         @classmethod
+        def _calc_size(cls, obj, **kwargs):
+            return length
+
+        @classmethod
         def _calc_max_size(cls):
             return length
 
         @classmethod
-        def _from_bytes_partial(cls, buffer):
+        def _from_bytes_partial(cls, buffer, **kwargs):
             encoded = buffer.read(length)
 
             if autopad:
@@ -126,7 +138,7 @@ def _fixed_len_str(name, length, encoding="UTF-8", autopad=True):
             return encoded.decode(encoding)
 
         @classmethod
-        def _to_bytes_partial(cls, buffer, obj):
+        def _to_bytes_partial(cls, buffer, obj, **kwargs):
             encoded = obj.encode(encoding)
             if len(encoded) > length:
                 raise ValueError("len(value) > length")
@@ -165,6 +177,15 @@ def _var_len_array(name, type_, max_length=None, length_type=None):
             return False
 
         @classmethod
+        def _calc_size(cls, obj, **kwargs):
+            len_size = BYTES_CATALOG.calc_max_size(length_type)
+            ty = get_concrete_type(module, type_)
+            body_size = (
+                    sum((BYTES_CATALOG.calc_size(ty, elem, **kwargs) for elem in obj))
+            )
+            return len_size + body_size
+
+        @classmethod
         def _calc_max_size(cls):
             len_size = BYTES_CATALOG.calc_max_size(length_type)
             body_size = (
@@ -174,8 +195,8 @@ def _var_len_array(name, type_, max_length=None, length_type=None):
             return len_size + body_size
 
         @classmethod
-        def _from_bytes_partial(cls, buffer):
-            length = BYTES_CATALOG.unpack_partial(length_type, buffer)
+        def _from_bytes_partial(cls, buffer, **kwargs):
+            length = BYTES_CATALOG.unpack_partial(length_type, buffer, **kwargs)
             if length > max_length:
                 raise RuntimeError("actual_length > max_length")
 
@@ -189,11 +210,11 @@ def _var_len_array(name, type_, max_length=None, length_type=None):
             return result
 
         @classmethod
-        def _to_bytes_partial(cls, buffer, obj):
+        def _to_bytes_partial(cls, buffer, obj, **kwargs):
             if len(obj) > max_length:
                 raise RuntimeError("actual_length > max_length")
 
-            BYTES_CATALOG.pack_partial(length_type, buffer, len(obj))
+            BYTES_CATALOG.pack_partial(length_type, buffer, len(obj), **kwargs )
             for elem in obj:
                 BYTES_CATALOG.pack_partial(
                     get_concrete_type(module, type_), buffer, elem
@@ -233,25 +254,30 @@ def _var_len_bytes(name, max_length=None, length_type=None):
             return False
 
         @classmethod
+        def _calc_size(cls, obj, **kwargs):
+            len_size = BYTES_CATALOG.calc_max_size(length_type)
+            return len_size + len(obj)
+
+        @classmethod
         def _calc_max_size(cls):
             len_size = BYTES_CATALOG.calc_max_size(length_type)
             body_size = max_length
             return len_size + body_size
 
         @classmethod
-        def _from_bytes_partial(cls, buffer):
-            length = BYTES_CATALOG.unpack_partial(length_type, buffer)
+        def _from_bytes_partial(cls, buffer, **kwargs):
+            length = BYTES_CATALOG.unpack_partial(length_type, buffer, **kwargs)
             if length > max_length:
                 raise RuntimeError("actual_length > max_length")
 
             return buffer.read(length)
 
         @classmethod
-        def _to_bytes_partial(cls, buffer, obj):
+        def _to_bytes_partial(cls, buffer, obj, **kwargs):
             if len(obj) > max_length:
                 raise RuntimeError("actual_length > max_length")
 
-            BYTES_CATALOG.pack_partial(length_type, buffer, len(obj))
+            BYTES_CATALOG.pack_partial(length_type, buffer, len(obj), **kwargs)
             buffer.write(obj)
 
         @classmethod
@@ -282,25 +308,30 @@ def _var_len_str(name, max_length=None, length_type=None, encoding="UTF-8"):
             return False
 
         @classmethod
+        def _calc_size(cls, obj, **kwargs):
+            len_size = BYTES_CATALOG.calc_max_size(length_type)
+            return len_size + len(obj.encode("utf-8"))
+
+        @classmethod
         def _calc_max_size(cls):
             len_size = BYTES_CATALOG.calc_max_size(length_type)
             body_size = max_length
             return len_size + body_size
 
         @classmethod
-        def _from_bytes_partial(cls, buffer):
-            length = BYTES_CATALOG.unpack_partial(length_type, buffer)
+        def _from_bytes_partial(cls, buffer, **kwargs):
+            length = BYTES_CATALOG.unpack_partial(length_type, buffer, **kwargs)
             if length > max_length:
                 raise RuntimeError("actual_length > max_length")
 
             return buffer.read(length).decode(encoding)
 
         @classmethod
-        def _to_bytes_partial(cls, buffer, obj):
+        def _to_bytes_partial(cls, buffer, obj, **kwargs):
             if len(obj) > max_length:
                 raise RuntimeError("actual_length > max_length")
 
-            BYTES_CATALOG.pack_partial(length_type, buffer, len(obj))
+            BYTES_CATALOG.pack_partial(length_type, buffer, len(obj), **kwargs)
             buffer.write(obj.encode(encoding))
 
         @classmethod

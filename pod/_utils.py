@@ -1,6 +1,38 @@
 import inspect
 from functools import lru_cache
 
+FORMAT_AUTO = "FORMAT_AUTO"  # attempt to determine format
+FORMAT_PASS = "FORMAT_PASS"  # rely on previously set AutoTagTypeValue
+FORMAT_ZERO_COPY = "FORMAT_ZERO_COPY"  # use rust's in-memory format
+FORMAT_BORSCH = "FORMAT_BORSCH"  # use borsch format
+
+# don't import U8 and U64 to avoid cycles
+FORMAT_TO_TYPE = {
+    FORMAT_BORSCH: "U8",  # stub
+    FORMAT_ZERO_COPY: "U64"  # stub
+}
+
+
+class AutoTagTypeValueManager:
+    TAG_TYPE = [None]  # mutable static var
+
+    @staticmethod
+    def get_tag():
+        return AutoTagTypeValueManager.TAG_TYPE[0]
+
+    def __init__(self, tag_type_or_format):
+        if isinstance(tag_type_or_format, str):
+            tag_type_or_format = FORMAT_TO_TYPE[tag_type_or_format]
+        self._tag_type = tag_type_or_format
+
+    def __enter__(self):
+        self.old = AutoTagTypeValueManager.TAG_TYPE[0]
+        AutoTagTypeValueManager.TAG_TYPE[0] = self._tag_type
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if self.old is not None:
+            AutoTagTypeValueManager.TAG_TYPE[0] = self.old
+
 
 class _GetitemToCall:
     def __init__(self, name, func):
