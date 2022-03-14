@@ -162,5 +162,5 @@ F64b = new_atomic_type("F64b", float, ">d", float)
 F64 = new_atomic_type("F64", float, "{}d", float)
 
 # necessary to avoid cycles
-utils.FORMAT_TO_TYPE[utils.FORMAT_BORSCH] = U8
+utils.FORMAT_TO_TYPE[utils.FORMAT_BORSH] = U8
 utils.FORMAT_TO_TYPE[utils.FORMAT_ZERO_COPY] = U64

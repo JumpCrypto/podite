@@ -4,7 +4,7 @@ from io import BytesIO
 from typing import Tuple, Dict, Any, Literal
 from .errors import PodPathError
 from .core import PodConverterCatalog, POD_SELF_CONVERTER
-from ._utils import FORMAT_BORSCH, FORMAT_PASS, FORMAT_AUTO, FORMAT_ZERO_COPY, FORMAT_TO_TYPE, AutoTagTypeValueManager
+from ._utils import FORMAT_BORSH, FORMAT_PASS, FORMAT_AUTO, FORMAT_ZERO_COPY, FORMAT_TO_TYPE, AutoTagTypeValueManager
 
 class BytesPodConverter(ABC):
     @abstractmethod
@@ -136,7 +136,7 @@ class BytesPodConverterCatalog(PodConverterCatalog[BytesPodConverter]):
         converter = self._get_converter_or_raise(type_, error_msg)
         return converter.calc_max_size(type_)
 
-    def calc_size(self, type_, obj=None, format=FORMAT_BORSCH, **kwargs):
+    def calc_size(self, type_, obj=None, format=FORMAT_BORSH, **kwargs):
         # zero-copy format does not support dynamic sizes
         if obj is None or format == FORMAT_ZERO_COPY:
             return self.calc_max_size(type_)
@@ -145,7 +145,7 @@ class BytesPodConverterCatalog(PodConverterCatalog[BytesPodConverter]):
         converter = self._get_converter_or_raise(type_, error_msg)
         return converter.calc_size(type_, obj, **kwargs)
 
-    def pack(self, type_, obj, format=FORMAT_BORSCH, **kwargs):
+    def pack(self, type_, obj, format=FORMAT_BORSH, **kwargs):
         buffer = BytesIO()
         error_msg = "No converter was able to pack raw data"
         converter = self._get_converter_or_raise(type_, error_msg)
@@ -156,11 +156,11 @@ class BytesPodConverterCatalog(PodConverterCatalog[BytesPodConverter]):
         elif format == FORMAT_PASS:
             self.pack_partial(type_, buffer, obj, format=format, **kwargs)
         else:
-            raise ValueError(f'Format argument must be {FORMAT_AUTO}, {FORMAT_BORSCH}, or {FORMAT_ZERO_COPY}, found {format}')
+            raise ValueError(f'Format argument must be {FORMAT_AUTO}, {FORMAT_BORSH}, or {FORMAT_ZERO_COPY}, found {format}')
 
         return buffer.getvalue()
 
-    def pack_partial(self, type_, buffer, obj, format=FORMAT_BORSCH, **kwargs):
+    def pack_partial(self, type_, buffer, obj, format=FORMAT_BORSH, **kwargs):
         error_msg = "No converter was able to pack raw data"
         converter = self._get_converter_or_raise(type_, error_msg)
 
@@ -178,7 +178,7 @@ class BytesPodConverterCatalog(PodConverterCatalog[BytesPodConverter]):
                 if converter.calc_max_size(type_) == buffer.tell():
                     format = FORMAT_ZERO_COPY
                 else:
-                    format = FORMAT_BORSCH
+                    format = FORMAT_BORSH
                 buffer.seek(pos)
 
         if format in FORMAT_TO_TYPE:
@@ -187,7 +187,7 @@ class BytesPodConverterCatalog(PodConverterCatalog[BytesPodConverter]):
         elif format == FORMAT_PASS:
             obj = converter.unpack_partial(type_, buffer, format=format, **kwargs)
         else:
-            raise ValueError(f'Format argument must be {FORMAT_AUTO}, {FORMAT_BORSCH}, or {FORMAT_ZERO_COPY}, found {format}')
+            raise ValueError(f'Format argument must be {FORMAT_AUTO}, {FORMAT_BORSH}, or {FORMAT_ZERO_COPY}, found {format}')
 
         if checked and buffer.tell() < len(buffer.getvalue()):
             raise RuntimeError("Unused bytes in provided raw data")
@@ -208,13 +208,13 @@ class BytesPodConverterCatalog(PodConverterCatalog[BytesPodConverter]):
         def calc_max_size(cls):
             return BYTES_CATALOG.calc_max_size(cls)
 
-        def calc_size(cls, obj=None, format=FORMAT_BORSCH, **kwargs):
+        def calc_size(cls, obj=None, format=FORMAT_BORSH, **kwargs):
             if obj is None or format == FORMAT_ZERO_COPY:
                 if not cls.is_static():
                     raise RuntimeError("calc_size can only be called for static classes")
                 return cls.calc_max_size()
-            if format == FORMAT_BORSCH:
-                with AutoTagTypeValueManager(FORMAT_TO_TYPE[FORMAT_BORSCH]):
+            if format == FORMAT_BORSH:
+                with AutoTagTypeValueManager(FORMAT_TO_TYPE[FORMAT_BORSH]):
                     return BYTES_CATALOG.calc_size(cls, obj, format=format, **kwargs)
             return BYTES_CATALOG.calc_size(cls, obj, format=format, **kwargs)
 

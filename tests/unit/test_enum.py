@@ -4,7 +4,7 @@ from typing import Optional
 from pod.decorators import pod
 from pod.types.atomic import U16, U32, U8
 from pod.types.enum import Enum, Variant, ENUM_TAG_NAME_MAP, ENUM_TAG_NAME, named_fields
-from pod._utils import FORMAT_PASS, FORMAT_BORSCH, FORMAT_ZERO_COPY
+from pod._utils import FORMAT_PASS, FORMAT_BORSH, FORMAT_ZERO_COPY
 from pod import AutoTagType
 
 
@@ -78,7 +78,7 @@ def test_bytes_enum_with_auto_tag_type():
         Y = Variant()
         Z = Variant(8, field=U16)
 
-    # borsch
+    # borsh
     assert not A.is_static()
     assert A.calc_max_size() == 10  # U64 + U16
 
@@ -102,7 +102,7 @@ def test_bytes_enum_with_auto_tag_type():
     assert A.Y == A.from_bytes(b"\x04".ljust(10, b"\x00"))
     assert A.Z(7) == A.from_bytes(b"\x08".ljust(8, b"\x00") + b"\x07\x00")
 
-    # borsch
+    # borsh
     assert not A.is_static()
     assert A.calc_max_size() == 10
 

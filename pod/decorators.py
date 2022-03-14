@@ -71,6 +71,9 @@ def pod(
     override: Union[bool, Container[str], Literal["auto"]] = "auto",
     dataclass_fn="auto",
 ):
+    """
+    pod is the decorator used to annotate classes whose fields are also pod types
+    """
     def wrap(cls_):
         return _process_class(cls_, converters, override, dataclass_fn)
 

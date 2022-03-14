@@ -77,6 +77,18 @@ def test_bytes_fixed_len_str():
 
     assert actual == expect
 
+    actual = type_.from_bytes(bytes(range(1, 6)))
+    expect = bytes(range(1, 6)).decode("utf-8")
+
+    assert actual == expect
+
+    @pod
+    class Message:
+        message: Str[None]
+        likes: U16
+
+    print(Message.to_bytes(Message("Serialization doesn't have to be painful", 19020)))
+
 
 def test_json_fixed_len_str():
     type_ = FixedLenStr[10]

@@ -168,7 +168,7 @@ def _var_len_array(name, type_, max_length=None, length_type=None):
         length_type = U32
 
     if max_length is None:
-        max_length = 2 ** BYTES_CATALOG.calc_max_size(length_type)
+        max_length = 2 ** (BYTES_CATALOG.calc_max_size(length_type) * 8)
 
     @pod(dataclass_fn=None)
     class _ArrayPod:
@@ -245,7 +245,7 @@ def _var_len_bytes(name, max_length=None, length_type=None):
         length_type = U32
 
     if max_length is None:
-        max_length = 2 ** BYTES_CATALOG.calc_max_size(length_type)
+        max_length = 2 ** (BYTES_CATALOG.calc_max_size(length_type) * 8)
 
     @pod(dataclass_fn=None)
     class _BytesPod:
@@ -299,7 +299,7 @@ def _var_len_str(name, max_length=None, length_type=None, encoding="UTF-8"):
         length_type = U32
 
     if max_length is None:
-        max_length = 2 ** BYTES_CATALOG.calc_max_size(length_type)
+        max_length = 2 ** (BYTES_CATALOG.calc_max_size(length_type) * 8)
 
     @pod(dataclass_fn=None)
     class _StrPod:

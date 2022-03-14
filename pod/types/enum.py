@@ -24,7 +24,7 @@ from pod.json import JSON_CATALOG
 from .atomic import U8
 from .misc import static_from_bytes_partial, static_to_bytes_partial
 from .. import pod
-from .._utils import resolve_name_mapping, get_calling_module, get_concrete_type, FORMAT_BORSCH, FORMAT_ZERO_COPY, AutoTagTypeValueManager, FORMAT_TO_TYPE
+from .._utils import resolve_name_mapping, get_calling_module, get_concrete_type, FORMAT_BORSH, FORMAT_ZERO_COPY, AutoTagTypeValueManager, FORMAT_TO_TYPE
 
 _VALUES_TO_NAMES = "__enum_values_to_names__"
 _NAMES_TO_VARIANTS = "__enum_names_to_variants__"
@@ -239,7 +239,7 @@ class Enum(int, Generic[TagType], metaclass=EnumMeta):  # type: ignore
         return True
 
     @classmethod
-    def _calc_size(cls, obj, format=FORMAT_BORSCH, **kwargs):
+    def _calc_size(cls, obj, format=FORMAT_BORSH, **kwargs):
         tag_type = cls.get_tag_type()
         val_size = BYTES_CATALOG.calc_size(tag_type, **kwargs)
         max_field_size = 0
@@ -263,14 +263,14 @@ class Enum(int, Generic[TagType], metaclass=EnumMeta):  # type: ignore
         return val_size + max_field_size
 
     @classmethod
-    def _to_bytes_partial(cls, buffer, instance, format=FORMAT_BORSCH, **kwargs):
+    def _to_bytes_partial(cls, buffer, instance, format=FORMAT_BORSH, **kwargs):
         if format == FORMAT_ZERO_COPY:
             static_to_bytes_partial(cls._inner_to_bytes_partial, cls, buffer, instance, format=format, **kwargs)
             return
         cls._inner_to_bytes_partial(buffer, instance, format=format, **kwargs)
 
     @classmethod
-    def _from_bytes_partial(cls, buffer, format=FORMAT_BORSCH, **kwargs):
+    def _from_bytes_partial(cls, buffer, format=FORMAT_BORSH, **kwargs):
         if format == FORMAT_ZERO_COPY:
             return static_from_bytes_partial(cls._inner_from_bytes_partial, cls, buffer, format=format, **kwargs)
         return cls._inner_from_bytes_partial(buffer, format=format, **kwargs)
