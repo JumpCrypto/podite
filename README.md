@@ -4,6 +4,9 @@
 Pod allows easily describing the byte format of dataclasses with all the usual 
 conveniences of working with native python objects. 
 
+Pod was developed alongside [Solmate](https://github.com/nimily/solmate), a client code generator 
+for Solana smart-contracts using the [Anchor Framework](https://github.com/project-serum/anchor) in rust.
+
 ### Quick Start
 Defining a message is as simple as:
 ```python
