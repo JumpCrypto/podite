@@ -167,7 +167,10 @@ class BytesPodConverterCatalog(PodConverterCatalog[BytesPodConverter]):
         return converter.pack_partial(type_, buffer, obj, format=format, **kwargs)
 
     def unpack(self, type_, raw, checked=False, format=FORMAT_AUTO, **kwargs) -> object:
-        buffer = BytesIO(raw)
+        if not isinstance(raw, BytesIO):
+            buffer = BytesIO(raw)
+        else:
+            buffer = raw
 
         error_msg = "No converter was able to unpack object"
         converter = self._get_converter_or_raise(type_, error_msg)
