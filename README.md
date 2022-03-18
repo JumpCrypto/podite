@@ -1,11 +1,27 @@
-# Pod
-### Serializing and Deserializing Plain Old Data
+<h1 align="center">Pod</h1>
 
-Pod allows easily describing the byte format of dataclasses with all the usual 
-conveniences of working with native python objects. 
 
-Pod was developed alongside [Solmate](https://github.com/nimily/solmate), a client code generator 
+### Serializing and Deserializing "Plain Old Data"
+
+Pod makes interacting with on-chain programs easy - if a Pod dataclass looks exactly like it’s on-chain rust equivalent, then you know it serializes the same way too. 
+No more arcane serialization libraries, no more surprises - get exactly what you expect.
+
+Pod was developed alongside [Solmate](https://github.com/nimily/solmate), a client code generator
 for Solana smart-contracts using the [Anchor Framework](https://github.com/project-serum/anchor) in rust.
+
+### Key Principles
+***Simple*** - 
+python types visually mirror on-chain rust types
+
+***Pythonic*** - 
+follows conventions from native `dataclass`
+
+***Smart Defaults*** - 
+automatically detects Borsh and ZeroCopy (bytemuck) account formats during deserialization, but allows manually specifying format
+
+***Extensible*** -
+provide custom serialization to support non-standard account layouts or optimize in performance-critical components
+
 
 ### Quick Start
 Defining a message is as simple as:
@@ -69,3 +85,29 @@ this implicit format recognition, you can explicitly write the format like this:
 ```python
 Message.from_bytes(_bytes, format=...)
 ```
+
+### Installation
+Requires `python >= 3.9`
+```sh
+poetry install pod
+```
+or
+```sh
+pip install pod
+```
+
+### Development Setup
+
+If you want to contribute to Solmate, follow these steps to get set up:
+
+1. Install [poetry](https://python-poetry.org/docs/#installation)
+2. Install dev dependencies:
+```sh
+poetry install
+```
+3. Code your change and add tests
+4. Verify tests 
+```sh
+poetry run pytest
+```
+5. Open Pr!
