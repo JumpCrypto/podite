@@ -8,10 +8,11 @@ authors = ["Nima Hamidi <hamidi@alumni.stanford.edu>", "Joe Howarth <josephehowa
 python = "^3.8"
 
 [tool.poetry.dev-dependencies]
-black = "^21.12b0"
+black = "^22.3.0"
 pytest = "^6.2.5"
 mypy = "^0.930"
 pylint = "^2.12.2"
+hypothesis = "^6.40.2"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
