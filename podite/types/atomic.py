@@ -3,8 +3,8 @@ import struct
 from io import BytesIO
 from typing import Literal
 
-import pod.decorators as decorators
-import pod._utils as utils
+import podite.decorators as decorators
+import podite._utils as utils
 
 _BYTEORDER: Literal["little", "big"] = "little"
 

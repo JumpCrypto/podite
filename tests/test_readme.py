@@ -1,5 +1,5 @@
 def readme():
-    from pod import pod, U8, Str
+    from podite import pod, U8, Str
 
     @pod
     class Message:
@@ -9,7 +9,7 @@ def readme():
     original = Message("Serialization doesn't have to be painful", 19020)
     Message.to_bytes(original)
 
-    from pod import FORMAT_ZERO_COPY
+    from podite import FORMAT_ZERO_COPY
     # ... previous
 
     _bytes = Message.to_bytes(original, format=FORMAT_ZERO_COPY)

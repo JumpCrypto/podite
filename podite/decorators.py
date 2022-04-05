@@ -4,8 +4,8 @@ import functools
 from typing import Union, Iterable, Container, Callable, Dict, Literal
 from dataclasses import dataclass, field as _field
 
-from pod import get_catalog
-from pod.core import POD_SELF_CONVERTER
+from podite import get_catalog
+from podite.core import POD_SELF_CONVERTER
 
 POD_OPTIONS = "__pod_options__"
 POD_OPTIONS_OVERRIDE = "override"
@@ -72,7 +72,7 @@ def pod(
     dataclass_fn="auto",
 ):
     """
-    pod is the decorator used to annotate classes whose fields are also pod types
+    podite is the decorator used to annotate classes whose fields are also podite types
     """
     def wrap(cls_):
         return _process_class(cls_, converters, override, dataclass_fn)

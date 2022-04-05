@@ -1,4 +1,4 @@
-from pod import U8, U32, Option, AutoTagTypeValueManager
+from podite import U8, U32, Option, AutoTagTypeValueManager
 
 
 def test_option_packed():

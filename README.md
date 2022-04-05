@@ -1,12 +1,14 @@
-<h1 align="center">Pod</h1>
+<h1 align="center">Podite</h1>
+<p align="center">Noun: the leg of a c<b>Rustacean</b></p>
 
 
 ### Serializing and Deserializing "Plain Old Data"
 
-Pod makes interacting with on-chain programs easy - if a Pod dataclass looks exactly like it’s on-chain rust equivalent, then you know it serializes the same way too. 
+Podite makes interacting with on-chain programs easy - if a Podite dataclass looks exactly 
+like it’s on-chain rust equivalent, then you know it serializes the same way too. 
 No more arcane serialization libraries, no more surprises - get exactly what you expect.
 
-Pod was developed alongside [Solmate](https://github.com/nimily/solmate), a client code generator
+Podite was developed alongside [Solmate](https://github.com/nimily/solmate), a client code generator
 for Solana smart-contracts using the [Anchor Framework](https://github.com/project-serum/anchor) in rust.
 
 ### Key Principles
@@ -25,8 +27,9 @@ provide custom serialization to support non-standard account layouts or optimize
 
 ### Quick Start
 Defining a message is as simple as:
+
 ```python
-from pod import pod, U8, Str
+from podite import pod, U8, Str
 
 @pod
 class Message:
@@ -59,7 +62,7 @@ quick and consistent ser(de) (serialization and deserialization) are crucial. Po
 borsh format used by most solana programs, but also supports zero-copy ser(de) to C format structs.
 
 ```python
-from pod import FORMAT_ZERO_COPY
+from podite import FORMAT_ZERO_COPY
 # ... previous 
 
 _bytes = Message.to_bytes(original, format=FORMAT_ZERO_COPY)
@@ -89,11 +92,11 @@ Message.from_bytes(_bytes, format=...)
 ### Installation
 Requires `python >= 3.9`
 ```sh
-poetry install pod
+poetry install podite
 ```
 or
 ```sh
-pip install pod
+pip install podite
 ```
 
 ### Development Setup

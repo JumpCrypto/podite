@@ -1,6 +1,6 @@
-from pod.decorators import pod
-from pod.json import POD_OPTIONS_RENAME
-from pod.types.atomic import I8, I16, U8, I32, U128
+from podite.decorators import pod
+from podite.json import POD_OPTIONS_RENAME
+from podite.types.atomic import I8, I16, U8, I32, U128
 
 
 def test_bytes_simple():

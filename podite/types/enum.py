@@ -13,14 +13,14 @@ from typing import (
     get_origin,
 )
 
-from pod.bytes import BYTES_CATALOG
-from pod.core import POD_SELF_CONVERTER
-from pod.decorators import (
+from podite.bytes import BYTES_CATALOG
+from podite.core import POD_SELF_CONVERTER
+from podite.decorators import (
     POD_OPTIONS,
     POD_OPTIONS_OVERRIDE,
     POD_OPTIONS_DATACLASS_FN,
 )
-from pod.json import JSON_CATALOG
+from podite.json import JSON_CATALOG
 from .atomic import U8
 from .misc import static_from_bytes_partial, static_to_bytes_partial
 from .. import pod
@@ -170,7 +170,7 @@ TagType = TypeVar("TagType")
 
 class Enum(int, Generic[TagType], metaclass=EnumMeta):  # type: ignore
     """
-    The base class for pod enums.
+    The base class for podite enums.
 
     Unlike python's Enum class, this class can be instantiated and
     supports enum field.

@@ -1,4 +1,4 @@
-from pod import Bool, I8, U8, I32l, I32b, U32b, I128l, I128b, U128l, U128b
+from podite import Bool, I8, U8, I32l, I32b, U32b, I128l, I128b, U128l, U128b
 
 
 def test_bytes_bool():

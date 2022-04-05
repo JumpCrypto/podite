@@ -2,7 +2,7 @@ from functools import partial
 from io import BytesIO
 from typing import Type
 
-from pod._utils import _GetitemToCall, get_calling_module, get_concrete_type
+from podite._utils import _GetitemToCall, get_calling_module, get_concrete_type
 from ..bytes import BYTES_CATALOG
 from ..decorators import pod
 from ..json import JSON_CATALOG, MISSING

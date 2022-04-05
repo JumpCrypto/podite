@@ -1,7 +1,7 @@
 from typing import Optional, get_origin, Union, get_args, Any, ForwardRef
 
-from pod.bytes import BytesPodConverter, BYTES_CATALOG
-from pod.json import JsonPodConverter, JSON_CATALOG
+from podite.bytes import BytesPodConverter, BYTES_CATALOG
+from podite.json import JsonPodConverter, JSON_CATALOG
 
 from .atomic import U64
 

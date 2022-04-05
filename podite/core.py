@@ -1,6 +1,6 @@
 # encoding: utf-8
 """
-Core functionality and base classes of pod packing/unpacking are implemented here.
+Core functionality and base classes of podite packing/unpacking are implemented here.
 """
 import sys
 from typing import List, Dict, Callable, TypeVar, Generic, Type, Optional

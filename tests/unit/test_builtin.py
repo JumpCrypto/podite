@@ -1,6 +1,6 @@
 from typing import Optional, Tuple
 
-from pod import pod, U16, U32, get_catalog
+from podite import pod, U16, U32, get_catalog
 
 
 def test_bytes_bool():
