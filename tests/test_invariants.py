@@ -5,8 +5,8 @@ Property based tests
 
 from hypothesis import given, note, strategies as st
 
-from pod.decorators import pod
-from pod.types.atomic import (
+from podite.decorators import pod
+from podite.types.atomic import (
     Bool,
     I128,
     I128b,
