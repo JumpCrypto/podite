@@ -9,7 +9,7 @@ Podite
 ### Serializing and Deserializing "Plain Old Data"
 
 Podite makes interacting with on-chain programs easy - if a Podite dataclass looks exactly 
-like it’s on-chain rust equivalent, then you know it serializes the same way too. 
+like its on-chain rust equivalent, then you know it serializes the same way too. 
 No more arcane serialization libraries, no more surprises - get exactly what you expect.
 
 Podite was developed alongside [Solmate](https://github.com/nimily/solmate), a client code generator
