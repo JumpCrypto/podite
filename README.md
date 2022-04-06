@@ -1,4 +1,4 @@
-<h1 align="center">Podite</h1>
+<h1 style="border-bottom: none" align="center">Podite</h1>
 <p align="center">Noun: the leg of a c<b>Rustacean</b></p>
 
 
