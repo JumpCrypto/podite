@@ -93,7 +93,7 @@ If you do not want to rely on this implicit format recognition, you can explicit
 Message.from_bytes(_bytes, format=...)
 ```
 
-### Where did the name come from ?
+### What's with the name?
 
 During development, the rust side used the `Pod` (short for plain-old-data) trait from bytemuck to read/write the
 in-memory format, so for the python side we originally used the same name. Podite means **the leg of a crustacean**
