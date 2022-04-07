@@ -1,5 +1,3 @@
-tests/round_trip_rust
-
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -133,4 +131,5 @@ dmypy.json
 # PyCharm files
 .idea/
 
-tests/round_trip_rust/
+tests/round_trip_rust/*
+!tests/round_trip_rust/.gitkeep
