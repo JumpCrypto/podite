@@ -24,7 +24,15 @@ from podite.json import JSON_CATALOG
 from .atomic import U8
 from .misc import static_from_bytes_partial, static_to_bytes_partial
 from .. import pod
-from .._utils import resolve_name_mapping, get_calling_module, get_concrete_type, FORMAT_BORSH, FORMAT_ZERO_COPY, AutoTagTypeValueManager, FORMAT_TO_TYPE
+from .._utils import (
+    resolve_name_mapping,
+    get_calling_module,
+    get_concrete_type,
+    FORMAT_BORSH,
+    FORMAT_ZERO_COPY,
+    AutoTagTypeValueManager,
+    FORMAT_TO_TYPE,
+)
 
 _VALUES_TO_NAMES = "__enum_values_to_names__"
 _NAMES_TO_VARIANTS = "__enum_names_to_variants__"
@@ -141,12 +149,16 @@ class Variant:
     def to_bytes_partial(self, buffer, obj, **kwargs):
         # Notice that tag value is already serialized
         if self.field is not None:
-            BYTES_CATALOG.pack_partial(self.concrete_field_type, buffer, obj.field, **kwargs)
+            BYTES_CATALOG.pack_partial(
+                self.concrete_field_type, buffer, obj.field, **kwargs
+            )
 
     def from_bytes_partial(self, buffer, instance, **kwargs):
         # Notice that tag value is already deserialized
         if self.field is not None:
-            field = BYTES_CATALOG.unpack_partial(self.concrete_field_type, buffer, **kwargs)
+            field = BYTES_CATALOG.unpack_partial(
+                self.concrete_field_type, buffer, **kwargs
+            )
             instance = instance(field)
 
         return instance
@@ -245,7 +257,9 @@ class Enum(int, Generic[TagType], metaclass=EnumMeta):  # type: ignore
         max_field_size = 0
         variant: Variant = cls._get_variant(obj.get_name())
         if variant.field is not None:
-            return val_size + BYTES_CATALOG.calc_size(variant.concrete_field_type, obj.field)
+            return val_size + BYTES_CATALOG.calc_size(
+                variant.concrete_field_type, obj.field
+            )
         return val_size
 
     @classmethod
@@ -265,14 +279,23 @@ class Enum(int, Generic[TagType], metaclass=EnumMeta):  # type: ignore
     @classmethod
     def _to_bytes_partial(cls, buffer, instance, format=FORMAT_BORSH, **kwargs):
         if format == FORMAT_ZERO_COPY:
-            static_to_bytes_partial(cls._inner_to_bytes_partial, cls, buffer, instance, format=format, **kwargs)
+            static_to_bytes_partial(
+                cls._inner_to_bytes_partial,
+                cls,
+                buffer,
+                instance,
+                format=format,
+                **kwargs,
+            )
             return
         cls._inner_to_bytes_partial(buffer, instance, format=format, **kwargs)
 
     @classmethod
     def _from_bytes_partial(cls, buffer, format=FORMAT_BORSH, **kwargs):
         if format == FORMAT_ZERO_COPY:
-            return static_from_bytes_partial(cls._inner_from_bytes_partial, cls, buffer, format=format, **kwargs)
+            return static_from_bytes_partial(
+                cls._inner_from_bytes_partial, cls, buffer, format=format, **kwargs
+            )
         return cls._inner_from_bytes_partial(buffer, format=format, **kwargs)
 
     @classmethod
@@ -408,7 +431,9 @@ def named_fields(**kwargs):
         return obj
 
     to_bytes = cls._to_bytes_partial
-    cls._to_bytes_partial = lambda buffer, obj: to_bytes(buffer, safe_cast(obj))
+    cls._to_bytes_partial = lambda buffer, obj, format=FORMAT_BORSH: to_bytes(
+        buffer, safe_cast(obj), format=format
+    )
 
     to_dict = cls._to_dict
     cls._to_dict = lambda obj: to_dict(cls(*obj))
@@ -432,11 +457,15 @@ class AutoTagType:
 
     @classmethod
     def _to_bytes_partial(cls, buffer, obj, **kwargs):
-        BYTES_CATALOG.pack_partial(AutoTagTypeValueManager.get_tag(), buffer, obj, **kwargs)
+        BYTES_CATALOG.pack_partial(
+            AutoTagTypeValueManager.get_tag(), buffer, obj, **kwargs
+        )
 
     @classmethod
     def _from_bytes_partial(cls, buffer: BytesIO, **kwargs):
-        return BYTES_CATALOG.unpack_partial(AutoTagTypeValueManager.get_tag(), buffer, **kwargs)
+        return BYTES_CATALOG.unpack_partial(
+            AutoTagTypeValueManager.get_tag(), buffer, **kwargs
+        )
 
     @classmethod
     def _to_dict(cls, obj):

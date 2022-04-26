@@ -3,7 +3,13 @@ from typing import Optional
 
 from podite.decorators import pod
 from podite.types.atomic import U16, U32, U8
-from podite.types.enum import Enum, Variant, ENUM_TAG_NAME_MAP, ENUM_TAG_NAME, named_fields
+from podite.types.enum import (
+    Enum,
+    Variant,
+    ENUM_TAG_NAME_MAP,
+    ENUM_TAG_NAME,
+    named_fields,
+)
 from podite._utils import FORMAT_PASS, FORMAT_BORSH, FORMAT_ZERO_COPY
 from podite import AutoTagType
 
@@ -96,7 +102,10 @@ def test_bytes_enum_with_auto_tag_type():
 
     assert A.to_bytes(A.X, format=FORMAT_ZERO_COPY) == b"\x03".ljust(8 + 2, b"\x00")
     assert A.to_bytes(A.Y, format=FORMAT_ZERO_COPY) == b"\x04".ljust(10, b"\x00")
-    assert A.to_bytes(A.Z(7), format=FORMAT_ZERO_COPY) == b"\x08".ljust(8, b"\x00") + b"\x07\x00"
+    assert (
+        A.to_bytes(A.Z(7), format=FORMAT_ZERO_COPY)
+        == b"\x08".ljust(8, b"\x00") + b"\x07\x00"
+    )
 
     assert A.X == A.from_bytes(b"\x03".ljust(10, b"\x00"))
     assert A.Y == A.from_bytes(b"\x04".ljust(10, b"\x00"))
@@ -113,6 +122,21 @@ def test_bytes_enum_with_auto_tag_type():
     assert A.X == A.from_bytes(b"\x03")
     assert A.Y == A.from_bytes(b"\x04")
     assert A.Z(7) == A.from_bytes(b"\x08\x07\x00")
+
+
+def test_json_enum_tagged():
+    t = named_fields(b=U32, c=U16)
+
+    @pod
+    class B(Enum):
+        __enum_options__ = {ENUM_TAG_NAME: "kind"}
+        X = None
+        Y = None
+        Z = Variant(field=Optional[t])
+
+    assert B.to_bytes(B.Y) == b"\x01"
+    assert B.to_bytes(B.Z) == b"\x02\x00"
+    assert B.to_bytes(B.Z((5, 6))) == b"\x02\x01\x05\x00\x00\x00\x06\x00"
 
 
 def test_json_enum_with_field():

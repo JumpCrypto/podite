@@ -21,7 +21,7 @@ def _fixed_len_array(name, type_, length, autopad=False):
         @classmethod
         def _calc_max_size(cls):
             return (
-                    BYTES_CATALOG.calc_max_size(get_concrete_type(module, type_)) * length
+                BYTES_CATALOG.calc_max_size(get_concrete_type(module, type_)) * length
             )
 
         @classmethod
@@ -46,9 +46,7 @@ def _fixed_len_array(name, type_, length, autopad=False):
 
         @classmethod
         def _to_dict(cls, obj):
-            return [
-                JSON_CATALOG.pack(get_concrete_type(module, type_), e) for e in obj
-            ]
+            return [JSON_CATALOG.pack(get_concrete_type(module, type_), e) for e in obj]
 
         @classmethod
         def _from_dict(cls, raw):
@@ -180,8 +178,8 @@ def _var_len_array(name, type_, max_length=None, length_type=None):
         def _calc_size(cls, obj, **kwargs):
             len_size = BYTES_CATALOG.calc_max_size(length_type)
             ty = get_concrete_type(module, type_)
-            body_size = (
-                    sum((BYTES_CATALOG.calc_size(ty, elem, **kwargs) for elem in obj))
+            body_size = sum(
+                (BYTES_CATALOG.calc_size(ty, elem, **kwargs) for elem in obj)
             )
             return len_size + body_size
 
@@ -189,8 +187,8 @@ def _var_len_array(name, type_, max_length=None, length_type=None):
         def _calc_max_size(cls):
             len_size = BYTES_CATALOG.calc_max_size(length_type)
             body_size = (
-                    BYTES_CATALOG.calc_max_size(get_concrete_type(module, type_))
-                    * max_length
+                BYTES_CATALOG.calc_max_size(get_concrete_type(module, type_))
+                * max_length
             )
             return len_size + body_size
 
@@ -214,7 +212,7 @@ def _var_len_array(name, type_, max_length=None, length_type=None):
             if len(obj) > max_length:
                 raise RuntimeError("actual_length > max_length")
 
-            BYTES_CATALOG.pack_partial(length_type, buffer, len(obj), **kwargs )
+            BYTES_CATALOG.pack_partial(length_type, buffer, len(obj), **kwargs)
             for elem in obj:
                 BYTES_CATALOG.pack_partial(
                     get_concrete_type(module, type_), buffer, elem
@@ -222,9 +220,7 @@ def _var_len_array(name, type_, max_length=None, length_type=None):
 
         @classmethod
         def _to_dict(cls, obj):
-            return [
-                JSON_CATALOG.pack(get_concrete_type(module, type_), e) for e in obj
-            ]
+            return [JSON_CATALOG.pack(get_concrete_type(module, type_), e) for e in obj]
 
         @classmethod
         def _from_dict(cls, raw):
@@ -355,4 +351,3 @@ FixedLenStr = _GetitemToCall("FixedLenStr", _fixed_len_str)
 Vec = _GetitemToCall("Vec", _var_len_array)
 Bytes = _GetitemToCall("Bytes", _var_len_bytes)
 Str = _GetitemToCall("Str", _var_len_str)
-

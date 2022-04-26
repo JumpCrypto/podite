@@ -1,4 +1,16 @@
-from podite import pod, U16, U32, Option, Static, Enum, Variant, Default, field, U8, AutoTagTypeValueManager
+from podite import (
+    pod,
+    U16,
+    U32,
+    Option,
+    Static,
+    Enum,
+    Variant,
+    Default,
+    field,
+    U8,
+    AutoTagTypeValueManager,
+)
 
 
 def test_bytes_static_option():

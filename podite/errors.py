@@ -12,6 +12,6 @@ class PodPathError(Exception):
     def __str__(self):
         path = ".".join(self.path[::-1])
         if self.val is not None:
-            return f'{self.message}\n Path: {path}\n Type: {self.ty}, Val: {type(self.val)}({self.val})'
+            return f"{self.message}\n Path: {path}\n Type: {self.ty}, Val: {type(self.val)}({self.val})"
         else:
-            return f'{self.message}\n Path: {path}\n Type: {self.ty}'
+            return f"{self.message}\n Path: {path}\n Type: {self.ty}"

@@ -18,5 +18,3 @@ _CATALOGS: Dict[str, PodConverterCatalog] = {
     "bytes": BYTES_CATALOG,
     "json": JSON_CATALOG,
 }
-
-

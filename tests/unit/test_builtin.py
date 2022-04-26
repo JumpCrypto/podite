@@ -74,7 +74,7 @@ def test_bytes_tuple_static():
     assert catalog.calc_max_size(type_) == 5
 
     assert catalog.unpack(type_, b"\x01\x05\x00\x00\x00") == (True, 5)
-    assert catalog.unpack(type_, b"\x00\x00\x06\x00\x00") == (False, 6 * 2 ** 8)
+    assert catalog.unpack(type_, b"\x00\x00\x06\x00\x00") == (False, 6 * 2**8)
 
 
 def test_bytes_tuple_static_forward_ref():
@@ -92,7 +92,7 @@ def test_bytes_tuple_static_forward_ref():
     assert catalog.unpack(type_, b"\x00\x01\x00\x00\x06\x00\x00") == (
         False,
         Element(True, False),
-        6 * 2 ** 8,
+        6 * 2**8,
     )
 
 

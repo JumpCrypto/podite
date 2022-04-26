@@ -74,6 +74,7 @@ def pod(
     """
     podite is the decorator used to annotate classes whose fields are also podite types
     """
+
     def wrap(cls_):
         return _process_class(cls_, converters, override, dataclass_fn)
 

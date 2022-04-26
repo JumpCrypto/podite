@@ -4,7 +4,15 @@ from io import BytesIO
 from typing import Tuple, Dict, Any, Literal
 from .errors import PodPathError
 from .core import PodConverterCatalog, POD_SELF_CONVERTER
-from ._utils import FORMAT_BORSH, FORMAT_PASS, FORMAT_AUTO, FORMAT_ZERO_COPY, FORMAT_TO_TYPE, AutoTagTypeValueManager
+from ._utils import (
+    FORMAT_BORSH,
+    FORMAT_PASS,
+    FORMAT_AUTO,
+    FORMAT_ZERO_COPY,
+    FORMAT_TO_TYPE,
+    AutoTagTypeValueManager,
+)
+
 
 class BytesPodConverter(ABC):
     @abstractmethod
@@ -53,7 +61,9 @@ def dataclass_is_static(cls) -> bool:
 def dataclass_calc_size(cls, obj):
     total = 0
     for field in fields(cls):
-        total += BYTES_CATALOG.calc_size(cls._get_field_type(field.type), getattr(obj, field.name))
+        total += BYTES_CATALOG.calc_size(
+            cls._get_field_type(field.type), getattr(obj, field.name)
+        )
 
     return total
 
@@ -71,13 +81,20 @@ def dataclass_to_bytes_partial(cls, buffer, obj, **kwargs):
         value = None
         try:
             value = getattr(obj, field.name)
-            BYTES_CATALOG.pack_partial(cls._get_field_type(field.type), buffer, value, **kwargs)
+            BYTES_CATALOG.pack_partial(
+                cls._get_field_type(field.type), buffer, value, **kwargs
+            )
         except PodPathError as e:
             e.path.append(field.name)
             e.path.append(cls.__name__)
             raise
         except Exception as e:
-            raise PodPathError("Failed to serialize dataclass", [field.name, cls.__name__], field.type.__name__, value) from e
+            raise PodPathError(
+                "Failed to serialize dataclass",
+                [field.name, cls.__name__],
+                field.type.__name__,
+                value,
+            ) from e
 
 
 def dataclass_from_bytes_partial(cls, buffer, **kwargs):
@@ -92,7 +109,11 @@ def dataclass_from_bytes_partial(cls, buffer, **kwargs):
             e.path.append(cls.__name__)
             raise
         except Exception as e:
-            raise PodPathError("Failed to deserialize dataclass", [field.name, cls.__name__], field.type.__name__) from e
+            raise PodPathError(
+                "Failed to deserialize dataclass",
+                [field.name, cls.__name__],
+                field.type.__name__,
+            ) from e
     return cls(**values)
 
 
@@ -156,7 +177,9 @@ class BytesPodConverterCatalog(PodConverterCatalog[BytesPodConverter]):
         elif format == FORMAT_PASS:
             self.pack_partial(type_, buffer, obj, format=format, **kwargs)
         else:
-            raise ValueError(f'Format argument must be {FORMAT_AUTO}, {FORMAT_BORSH}, or {FORMAT_ZERO_COPY}, found {format}')
+            raise ValueError(
+                f"Format argument must be {FORMAT_AUTO}, {FORMAT_BORSH}, or {FORMAT_ZERO_COPY}, found {format}"
+            )
 
         return buffer.getvalue()
 
@@ -190,14 +213,18 @@ class BytesPodConverterCatalog(PodConverterCatalog[BytesPodConverter]):
         elif format == FORMAT_PASS:
             obj = converter.unpack_partial(type_, buffer, format=format, **kwargs)
         else:
-            raise ValueError(f'Format argument must be {FORMAT_AUTO}, {FORMAT_BORSH}, or {FORMAT_ZERO_COPY}, found {format}')
+            raise ValueError(
+                f"Format argument must be {FORMAT_AUTO}, {FORMAT_BORSH}, or {FORMAT_ZERO_COPY}, found {format}"
+            )
 
         if checked and buffer.tell() < len(buffer.getvalue()):
             raise RuntimeError("Unused bytes in provided raw data")
 
         return obj
 
-    def unpack_partial(self, type_, buffer, format=FORMAT_AUTO, **kwargs) -> Tuple[bool, object]:
+    def unpack_partial(
+        self, type_, buffer, format=FORMAT_AUTO, **kwargs
+    ) -> Tuple[bool, object]:
         error_msg = "No converter was able to unpack object"
         converter = self._get_converter_or_raise(type_, error_msg)
         return converter.unpack_partial(type_, buffer, format=format, **kwargs)
@@ -214,7 +241,9 @@ class BytesPodConverterCatalog(PodConverterCatalog[BytesPodConverter]):
         def calc_size(cls, obj=None, format=FORMAT_BORSH, **kwargs):
             if obj is None or format == FORMAT_ZERO_COPY:
                 if not cls.is_static():
-                    raise RuntimeError("calc_size can only be called for static classes")
+                    raise RuntimeError(
+                        "calc_size can only be called for static classes"
+                    )
                 return cls.calc_max_size()
             if format == FORMAT_BORSH:
                 with AutoTagTypeValueManager(FORMAT_TO_TYPE[FORMAT_BORSH]):

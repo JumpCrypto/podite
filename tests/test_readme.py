@@ -10,6 +10,7 @@ def readme():
     Message.to_bytes(original)
 
     from podite import FORMAT_ZERO_COPY
+
     # ... previous
 
     _bytes = Message.to_bytes(original, format=FORMAT_ZERO_COPY)

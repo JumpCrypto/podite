@@ -56,7 +56,7 @@ class StrConverter(BytesPodConverter, JsonPodConverter):
         return 8 + len(obj)
 
     def calc_max_size(self, type_) -> int:
-        return 2 ** 64 + 8
+        return 2**64 + 8
 
     def pack_partial(self, type_, buffer, obj, **kwargs):
         BYTES_CATALOG.pack_partial(U64, buffer, len(obj))
@@ -154,7 +154,7 @@ class TupleConverter(BytesPodConverter, JsonPodConverter):
 
     def calc_size(self, type_, obj, **kwargs) -> int:
         total = 0
-        for obj,arg_type in zip(obj, get_args(type_)):
+        for obj, arg_type in zip(obj, get_args(type_)):
             total += BYTES_CATALOG.calc_size(arg_type, obj, **kwargs)
 
         return total

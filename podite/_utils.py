@@ -7,10 +7,7 @@ FORMAT_ZERO_COPY = "FORMAT_ZERO_COPY"  # use rust's in-memory format
 FORMAT_BORSH = "FORMAT_BORSH"  # use borsh format
 
 # don't import U8 and U64 to avoid cycles
-FORMAT_TO_TYPE = {
-    FORMAT_BORSH: "U8",  # stub
-    FORMAT_ZERO_COPY: "U64"  # stub
-}
+FORMAT_TO_TYPE = {FORMAT_BORSH: "U8", FORMAT_ZERO_COPY: "U64"}  # stub  # stub
 
 
 class AutoTagTypeValueManager:
@@ -50,7 +47,6 @@ class _GetitemToCall:
 
     def __repr__(self):
         return str(self)
-
 
 
 def resolve_name_mapping(mapping):
