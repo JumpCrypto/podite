@@ -3,6 +3,7 @@ name = "podite"
 version = "0.1.0"
 description = "What you see is what you get serialization for Plain Old Data"
 authors = ["Nima Hamidi <hamidi@alumni.stanford.edu>", "Joe Howarth <josephehowarth@gmail.com>"]
+homepage = "https://github.com/JumpCrypto/podite"
 
 [tool.poetry.dependencies]
 python = "^3.8"
