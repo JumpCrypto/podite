@@ -29,7 +29,7 @@ def _fixed_len_array(name, type_, length, autopad=False):
             result = []
             for _ in range(length):
                 value = BYTES_CATALOG.unpack_partial(
-                    get_concrete_type(module, type_), buffer
+                    get_concrete_type(module, type_), buffer, **kwargs
                 )
                 result.append(value)
 
